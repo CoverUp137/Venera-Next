@@ -828,26 +828,45 @@ abstract mixin class ReaderLocation {
     _pendingPage = null;
   }
 
-  bool toPage(int page) {
+  bool toPage(int page, {bool animated = true}) {
     if (imageViewController == null || isLoading) return false;
     if (_validatePage(page)) {
-      if (page == this.page && page != 1 && page != totalPages) {
+      if (page == this.page &&
+          page != 1 &&
+          page != totalPages &&
+          !isPageAnimating) {
         return false;
       }
-      final hasAnimation = enablePageAnimation(cid, type);
+      // A new destination supersedes the previous transition. The positioned
+      // list may never complete a far-scroll Future when it is interrupted
+      // before its secondary list mounts; do not keep waiting for that Future.
+      resetPageAnimation();
+      final hasAnimation = animated && enablePageAnimation(cid, type);
       if (hasAnimation) {
         _pendingPage = page;
         _animationCount++;
         final generation = _pageAnimationGeneration;
         update();
-        imageViewController!.animateToPage(page).then((_) {
+        void finishAnimation() {
           if (generation != _pageAnimationGeneration) return;
           _animationCount--;
           if (_pendingPage == page) {
             _pendingPage = null;
           }
           update();
-        });
+        }
+
+        unawaited(
+          Future<void>.sync(
+            () => imageViewController!.animateToPage(page),
+          ).then(
+            (_) => finishAnimation(),
+            onError: (Object error, StackTrace stackTrace) {
+              Log.error('Reader', 'Page navigation failed: $error', stackTrace);
+              finishAnimation();
+            },
+          ),
+        );
       } else {
         this.page = page;
         update();
