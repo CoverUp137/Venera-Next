@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as image;
 import 'package:pdfrx/pdfrx.dart';
@@ -80,6 +83,103 @@ void main() {
           appdata.settings['quickFavorite'] = quickFavorite;
         }
       }
+
+      test(
+        'storage migration cannot copy or delete a PDF still being imported',
+        () async {
+          final firstPageReady = Completer<void>();
+          final renderGate = Completer<void>();
+          final originalPath = manager.path;
+          final destination = Directory(
+            FilePath.join(dataDirectory.path, 'migrated'),
+          )..createSync();
+          final importing = PdfComicImporter.importDocument(
+            _Document([_Page(), _Page(waitBeforeRender: renderGate.future)]),
+            title: 'In progress',
+            onProgress: (current, total) {
+              if (current == 1) firstPageReady.complete();
+            },
+            registerComic: (comic) => const ImportComic().registerComic(comic),
+          );
+          // Always finish the renderer, including when a regression assertion
+          // fails, so test cleanup cannot race a live import.
+          addTearDown(() async {
+            if (!renderGate.isCompleted) renderGate.complete();
+            try {
+              await importing;
+            } catch (_) {}
+          });
+          await firstPageReady.future;
+          expect(await manager.setNewPath(destination.path), isNotNull);
+          expect(manager.path, originalPath);
+          expect(destination.listSync(), isEmpty);
+          renderGate.complete();
+          await importing;
+          expect(
+            await manager.getImages('1', ComicType.local, 1),
+            hasLength(2),
+          );
+          expect(await manager.setNewPath(destination.path), isNull);
+          expect(
+            await manager.getImages('1', ComicType.local, 1),
+            hasLength(2),
+          );
+        },
+      );
+
+      test('failed PDF import releases storage for migration', () async {
+        final destination = Directory(
+          FilePath.join(dataDirectory.path, 'after-failure'),
+        )..createSync();
+        await expectLater(
+          PdfComicImporter.importDocument(
+            _Document([_Page(returnsNull: true)]),
+            title: 'Broken',
+          ),
+          throwsA(isA<PdfPageRenderException>()),
+        );
+        expect(await manager.setNewPath(destination.path), isNull);
+        expect(destination.listSync(), isEmpty);
+      });
+
+      testWidgets(
+        'library recovery refuses to register a partially converted PDF',
+        (tester) async {
+          await tester.pumpWidget(
+            MaterialApp(
+              navigatorKey: App.rootNavigatorKey,
+              home: const Scaffold(),
+            ),
+          );
+          await tester.runAsync(() async {
+            final firstPageReady = Completer<void>();
+            final renderGate = Completer<void>();
+            final importing = PdfComicImporter.importDocument(
+              _Document([_Page(), _Page(waitBeforeRender: renderGate.future)]),
+              title: 'Still importing',
+              onProgress: (current, total) {
+                if (current == 1) firstPageReady.complete();
+              },
+              registerComic: (comic) =>
+                  const ImportComic().registerComic(comic),
+            );
+            try {
+              await firstPageReady.future;
+              expect(await const ImportComic().localDownloads(), isFalse);
+              expect(manager.count, 0);
+            } finally {
+              renderGate.complete();
+              await importing;
+            }
+            expect(manager.count, 1);
+            expect(
+              await manager.getImages('1', ComicType.local, 1),
+              hasLength(2),
+            );
+          });
+          await tester.pumpWidget(const SizedBox.shrink());
+        },
+      );
 
       test(
         'registers multiple comics in the selected favorites folder',
@@ -349,9 +449,10 @@ class _Document extends Fake implements PdfDocument {
 }
 
 class _Page extends Fake implements PdfPage {
-  _Page({this.onRender, this.returnsNull = false});
+  _Page({this.onRender, this.returnsNull = false, this.waitBeforeRender});
 
   final void Function()? onRender;
+  final Future<void>? waitBeforeRender;
   final bool returnsNull;
   int renderCount = 0;
   _Image? renderedImage;
@@ -378,6 +479,7 @@ class _Page extends Fake implements PdfPage {
     PdfPageRenderCancellationToken? cancellationToken,
   }) async {
     renderCount++;
+    await waitBeforeRender;
     onRender?.call();
     if (returnsNull) return null;
     return renderedImage = _Image();

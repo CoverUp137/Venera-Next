@@ -17,7 +17,10 @@ import 'package:venera_next/foundation/file_interaction.dart';
 
 import 'package:venera_next/foundation/app.dart';
 import 'package:venera_next/foundation/context.dart';
+import 'package:venera_next/foundation/translations.dart';
 import 'package:venera_next/features/history/history.dart';
+
+import 'local_storage_guard.dart';
 
 export 'local_comic_image.dart';
 
@@ -211,6 +214,16 @@ class LocalManager with ChangeNotifier {
 
   // return error message if failed
   Future<String?> setNewPath(String newPath) async {
+    try {
+      return await LocalComicStorageGuard.instance.runExclusive(
+        () => _setNewPath(newPath),
+      );
+    } on LocalComicStorageBusy catch (error) {
+      return error.message.tl;
+    }
+  }
+
+  Future<String?> _setNewPath(String newPath) async {
     var newDir = Directory(newPath);
     if (!await newDir.exists()) {
       return "Directory does not exist";

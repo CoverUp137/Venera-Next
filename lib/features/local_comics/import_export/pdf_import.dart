@@ -5,6 +5,7 @@ import 'package:image/image.dart' as image;
 import 'package:pdfrx/pdfrx.dart';
 import 'package:venera_next/features/local_comics/import_export/document_import.dart';
 import 'package:venera_next/features/local_comics/local.dart';
+import 'package:venera_next/features/local_comics/local_storage_guard.dart';
 import 'package:venera_next/foundation/file_system.dart';
 
 const double _pdfRenderScale = 3;
@@ -85,6 +86,22 @@ abstract final class PdfComicImporter {
   /// Takes ownership of [document] and closes it even if conversion fails.
   /// The output is committed only after [registerComic] succeeds, when supplied.
   static Future<LocalComic> importDocument(
+    PdfDocument document, {
+    required String title,
+    DocumentImportProgress? onProgress,
+    DocumentImportCancellation? cancellation,
+    Future<void> Function(LocalComic comic)? registerComic,
+  }) => LocalComicStorageGuard.instance.runImport(
+    () => _importDocument(
+      document,
+      title: title,
+      onProgress: onProgress,
+      cancellation: cancellation,
+      registerComic: registerComic,
+    ),
+  );
+
+  static Future<LocalComic> _importDocument(
     PdfDocument document, {
     required String title,
     DocumentImportProgress? onProgress,

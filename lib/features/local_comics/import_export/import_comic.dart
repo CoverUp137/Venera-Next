@@ -18,6 +18,7 @@ import 'pdf_import.dart';
 import 'pdf_import_batch.dart';
 import 'pdf_import_dialog.dart';
 import 'pdf_import_tasks.dart';
+import '../local_storage_guard.dart';
 import 'package:venera_next/foundation/file_interaction.dart';
 
 class ImportComic {
@@ -290,6 +291,17 @@ class ImportComic {
   }
 
   Future<bool> localDownloads() async {
+    try {
+      return await LocalComicStorageGuard.instance.runExclusive(
+        _scanLocalDownloads,
+      );
+    } on LocalComicStorageBusy catch (error) {
+      App.rootContext.showMessage(message: error.message.tl);
+      return false;
+    }
+  }
+
+  Future<bool> _scanLocalDownloads() async {
     var localDir = LocalManager().directory;
     Map<String?, List<LocalComic>> imported = {null: []};
     bool cancelled = false;
