@@ -19,7 +19,7 @@ import 'foundation/appdata.dart';
 import 'foundation/context.dart';
 import 'foundation/js_engine.dart';
 import 'features/webdav_library/webdav_library.dart';
-import 'features/sync/data_sync.dart';
+import 'features/sync/sync.dart';
 
 void main(List<String> args) {
   if (args.contains('--headless')) {

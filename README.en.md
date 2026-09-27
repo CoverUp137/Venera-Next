@@ -52,8 +52,12 @@ Venera's JavaScript extensions, local reading, search and categories, favorites,
 > This repository maintains the reader and extension runtime. It does not provide, bundle, host, or recommend comic sources. Users must configure legal extensions themselves; content and availability depend on the corresponding extension and service.
 
 <div align="center">
-  <a href="https://github.com/CyrilPeng/venera-next">GitHub repository</a> ·
-  <a href="https://gitee.com/CyrilPeng/venera-next">Gitee mirror</a>
+  <a href="https://github.com/CyrilPeng/Venera-Next">
+    <img alt="GitHub main repository" src="https://img.shields.io/badge/GitHub-Main_repository-181717?style=for-the-badge&logo=github&logoColor=white" />
+  </a>
+  <a href="https://gitee.com/CyrilPeng/venera-next">
+    <img alt="Gitee China mirror" src="https://img.shields.io/badge/Gitee-China_mirror-C71D23?style=for-the-badge&logo=gitee&logoColor=white" />
+  </a>
 </div>
 
 ---

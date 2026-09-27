@@ -52,8 +52,10 @@
 > 本仓库只维护阅读器本体和扩展运行环境，不提供、内置、托管或推荐漫画源。网络漫画源需由用户自行合法配置，具体内容及源站可用性由相应扩展和服务决定。
 
 <div align="center">
-  <a href="https://github.com/CyrilPeng/venera-next">GitHub 主仓库</a> ·
-  <a href="https://gitee.com/CyrilPeng/venera-next">Gitee 国内镜像</a>
+  <a href="https://github.com/CyrilPeng/Venera-Next">
+    <img alt="GitHub 主仓库" src="https://img.shields.io/badge/GitHub-主仓库-181717?style=for-the-badge&logo=github&logoColor=white" /></a>
+  <a href="https://gitee.com/CyrilPeng/venera-next">
+    <img alt="Gitee 国内镜像" src="https://img.shields.io/badge/Gitee-国内镜像-C71D23?style=for-the-badge&logo=gitee&logoColor=white" /></a>
 </div>
 
 ---
