@@ -36,6 +36,7 @@ English index: [README.en.md](README.en.md)
 ## 分发和发布
 
 - [Windows 分发](distribution/windows.zh.md) / [Windows Distribution](distribution/windows.en.md)
+- [Linux 安装与分发](distribution/linux.zh.md) / [Linux Installation and Distribution](distribution/linux.en.md)
 
 ## 用户和命令行
 

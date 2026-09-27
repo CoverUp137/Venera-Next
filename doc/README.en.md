@@ -36,6 +36,7 @@ Source developers can follow the [authoring guide](api/comic_source.en.md) → [
 ## Distribution
 
 - [Windows 分发](distribution/windows.zh.md) / [Windows Distribution](distribution/windows.en.md)
+- [Linux 安装与分发](distribution/linux.zh.md) / [Linux Installation and Distribution](distribution/linux.en.md)
 
 ## User And CLI
 

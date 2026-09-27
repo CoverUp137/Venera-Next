@@ -130,7 +130,16 @@ See [Windows Distribution](doc/distribution/windows.en.md) for installer, portab
 
 ### Linux
 
-Download `venera-next_xxx_amd64.deb` or the AppImage from GitHub Releases.
+Download the package matching your distribution and architecture from [Releases](https://github.com/CyrilPeng/venera-next/releases). RPM and AppImage assets start with the release containing this change.
+
+| Distribution / format | Install or run |
+|---|---|
+| Debian / Ubuntu (DEB) | `sudo apt install ./venera-next_xxx_amd64.deb` (use `arm64` on ARM64) |
+| Fedora and compatible RPM distributions | `sudo dnf install ./venera-next-xxx.x86_64.rpm` (use `aarch64` on ARM64) |
+| Arch Linux | `sudo pacman -U ./venera-next-xxx-x86_64.pkg.tar.zst` |
+| AppImage | `chmod +x VeneraNext-xxx-linux-x86_64.AppImage`, then `./VeneraNext-xxx-linux-x86_64.AppImage` (`aarch64` is also available) |
+
+Linux builds use Ubuntu 22.04. AppImage includes the application and Flutter libraries but still requires compatible glibc, GTK 3 and WebKitGTK 4.1 on the host. See [Linux installation and distribution](doc/distribution/linux.en.md) for dependencies, running without FUSE, and Actions builds.
 
 ### macOS
 

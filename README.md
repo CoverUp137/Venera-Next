@@ -130,7 +130,16 @@ Windows 安装器、便携包和 winget manifest 维护说明见 [doc/distributi
 
 ### Linux
 
-从 Releases 下载 `venera-next_xxx_amd64.deb` 或 AppImage。
+从 [Releases](https://github.com/CyrilPeng/venera-next/releases) 下载对应架构的安装包；RPM 和 AppImage 从包含本次改动的版本开始提供，旧版本可能没有这些资产。
+
+| 发行版 / 方式 | 安装或运行 |
+|---|---|
+| Debian / Ubuntu（DEB） | `sudo apt install ./venera-next_xxx_amd64.deb`（ARM64 选择 `arm64` 包） |
+| Fedora 等红帽系（RPM） | `sudo dnf install ./venera-next-xxx.x86_64.rpm`（ARM64 选择 `aarch64` 包） |
+| Arch Linux | `sudo pacman -U ./venera-next-xxx-x86_64.pkg.tar.zst` |
+| AppImage | `chmod +x VeneraNext-xxx-linux-x86_64.AppImage`，再执行 `./VeneraNext-xxx-linux-x86_64.AppImage`（也提供 `aarch64`） |
+
+当前 Linux 构建基于 Ubuntu 22.04，系统需提供兼容的 glibc、GTK 3 和 WebKitGTK 4.1；AppImage 携带应用与 Flutter 运行库，仍依赖这些系统组件。详细依赖、无 FUSE 运行方式及 Actions 构建说明见 [Linux 安装与分发](doc/distribution/linux.zh.md)。
 
 ### macOS
 
