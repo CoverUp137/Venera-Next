@@ -301,7 +301,7 @@ class DataSync with ChangeNotifier {
     if (!config.isValid) {
       return const Res(true);
     }
-    var client = config.createClient();
+    var client = config.createClient(logRequests: true);
 
     try {
       appdata.settings['dataVersion']++;
@@ -350,7 +350,7 @@ class DataSync with ChangeNotifier {
     if (!config.isValid) {
       return const Res(true);
     }
-    var client = config.createClient();
+    var client = config.createClient(logRequests: true);
 
     try {
       var files = await client.readDir('/');
