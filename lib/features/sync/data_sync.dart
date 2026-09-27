@@ -18,8 +18,11 @@ import 'package:venera_next/foundation/file_system.dart';
 
 enum _DataSyncTask { upload, download }
 
+enum DataSyncMode { manual, realtime, scheduled }
+
 class DataSyncStatusSnapshot {
   const DataSyncStatusSnapshot({
+    this.isConfigured = false,
     required this.isEnabled,
     required this.isUploading,
     required this.isDownloading,
@@ -28,6 +31,7 @@ class DataSyncStatusSnapshot {
   });
 
   final bool isEnabled;
+  final bool isConfigured;
   final bool isUploading;
   final bool isDownloading;
   final int lastSyncTime;
@@ -35,7 +39,7 @@ class DataSyncStatusSnapshot {
 
   bool get isSyncing => isUploading || isDownloading;
 
-  bool get shouldShow => isEnabled || isSyncing;
+  bool get shouldShow => isConfigured || isEnabled || isSyncing;
 
   String get title => isSyncing ? 'Syncing Data' : 'Sync Data';
 
@@ -52,13 +56,12 @@ class DataSyncStatusSnapshot {
 class DataSync with ChangeNotifier {
   DataSync._() {
     appdata.registerSyncDataRequestHandler(onDataChanged);
-    if (isEnabled) {
-      unawaited(downloadData());
-    }
     LocalFavoritesManager().addListener(onDataChanged);
     ComicSourceManager().addListener(onDataChanged);
+    checkForAutomaticSync(startup: true);
     if (App.isDesktop && !debugDisableWindowCloseHandler) {
       Future.delayed(const Duration(seconds: 1), () {
+        if (_disposed) return;
         var controller = WindowFrame.of(App.rootContext);
         controller.addCloseListener(_handleWindowClose);
       });
@@ -66,8 +69,157 @@ class DataSync with ChangeNotifier {
   }
 
   void onDataChanged() {
-    if (isEnabled) {
+    // Import notifications describe the downloaded snapshot, not local edits.
+    if (_disposed || _isDownloading || !hasConfiguration) return;
+    _changeGeneration++;
+    if (!hasPendingChanges) {
+      appdata.implicitData['webdavSyncPending'] = true;
+      appdata.writeImplicitData();
+    }
+    if (isEnabled && mode == DataSyncMode.realtime && !_configuring) {
       unawaited(uploadData());
+    }
+  }
+
+  static DataSyncMode get mode {
+    final stored = appdata.implicitData['webdavSyncMode'];
+    return DataSyncMode.values.firstWhereOrNull(
+          (value) => value.name == stored,
+        ) ??
+        (appdata.implicitData['webdavAutoSync'] == true
+            ? DataSyncMode.realtime
+            : DataSyncMode.manual);
+  }
+
+  static const intervalOptions = [5, 15, 30, 60, 180, 360];
+
+  static int get intervalMinutes {
+    final value = appdata.implicitData['webdavSyncIntervalMinutes'];
+    return value is int && intervalOptions.contains(value) ? value : 30;
+  }
+
+  bool get hasConfiguration => _validateConfig()?.isValid == true;
+
+  bool get hasPendingChanges =>
+      appdata.implicitData['webdavSyncPending'] == true;
+
+  Timer? _scheduleTimer;
+  bool _disposed = false;
+  bool _configuring = false;
+  int _changeGeneration = 0;
+  DateTime? _lastRealtimeCheck;
+
+  @visibleForTesting
+  static DateTime Function()? debugNow;
+
+  DateTime get _now => debugNow?.call() ?? DateTime.now();
+
+  /// Called at startup and resume, independently of the home page being mounted.
+  /// Timers only run in this process; overdue checks are caught up on next launch.
+  void checkForAutomaticSync({bool startup = false}) {
+    _scheduleTimer?.cancel();
+    _scheduleTimer = null;
+    if (_disposed || _configuring || !isEnabled || _activeTask != null) return;
+    if (mode == DataSyncMode.realtime) {
+      if (!startup &&
+          _lastRealtimeCheck != null &&
+          _now.difference(_lastRealtimeCheck!) < const Duration(minutes: 10)) {
+        return;
+      }
+      _lastRealtimeCheck = _now;
+    } else {
+      final stored = appdata.implicitData['webdavSyncLastAttempt'];
+      final last = stored is int
+          ? DateTime.fromMillisecondsSinceEpoch(stored)
+          : null;
+      final interval = Duration(minutes: intervalMinutes);
+      // A clock moved backwards must not delay syncing indefinitely.
+      final elapsed = last == null ? interval : _now.difference(last);
+      final remaining = interval - (elapsed.isNegative ? interval : elapsed);
+      if (remaining > Duration.zero) {
+        _scheduleTimer = Timer(remaining, checkForAutomaticSync);
+        return;
+      }
+    }
+    // Do not download over local edits waiting for their next scheduled upload.
+    unawaited(hasPendingChanges ? uploadData() : downloadData());
+  }
+
+  /// Save a draft only after its initial transfer succeeds. Automatic work is
+  /// suspended while validating it, and existing transfers finish first.
+  Future<Res<bool>> configure({
+    required List<String> config,
+    required String excludedFields,
+    required DataSyncMode syncMode,
+    required int minutes,
+    required bool initialUpload,
+  }) async {
+    if (_configuring) return const Res.error('Sync configuration is busy');
+    _configuring = true;
+    _scheduleTimer?.cancel();
+    while (_activeTask != null || _pendingTask != null) {
+      await (_pendingTask ?? _activeTask!);
+    }
+    final oldConfig = appdata.settings['webdav'];
+    final oldFields = appdata.settings['disableSyncFields'];
+    const keys = [
+      'webdavSyncMode',
+      'webdavAutoSync',
+      'webdavSyncIntervalMinutes',
+      'webdavSyncLastAttempt',
+      'webdavSyncPending',
+    ];
+    final previous = {for (final key in keys) key: appdata.implicitData[key]};
+    final previousGeneration = _changeGeneration;
+    var committed = false;
+    try {
+      appdata.settings['webdav'] = config;
+      appdata.settings['disableSyncFields'] = excludedFields;
+      if (config.isNotEmpty && !hasConfiguration) {
+        return const Res.error('Invalid WebDAV configuration');
+      }
+      if (config.isNotEmpty && syncMode != DataSyncMode.manual) {
+        final result = initialUpload
+            ? await uploadData()
+            : await downloadData();
+        if (result.error) return result;
+      }
+      final selected = config.isEmpty ? DataSyncMode.manual : syncMode;
+      appdata.implicitData['webdavSyncMode'] = selected.name;
+      appdata.implicitData['webdavAutoSync'] = selected != DataSyncMode.manual;
+      appdata.implicitData['webdavSyncIntervalMinutes'] =
+          intervalOptions.contains(minutes) ? minutes : 30;
+      appdata.implicitData['webdavSyncLastAttempt'] =
+          _now.millisecondsSinceEpoch;
+      if (config.isEmpty) appdata.implicitData['webdavSyncPending'] = false;
+      appdata.writeImplicitData();
+      await appdata.saveData(false);
+      committed = true;
+      return const Res(true);
+    } catch (error, stack) {
+      Log.error('Data Sync', error, stack);
+      return Res.error(error.toString());
+    } finally {
+      if (!committed) {
+        appdata.settings['webdav'] = oldConfig;
+        appdata.settings['disableSyncFields'] = oldFields;
+        for (final key in keys) {
+          if (previous[key] == null) {
+            appdata.implicitData.remove(key);
+          } else {
+            appdata.implicitData[key] = previous[key];
+          }
+        }
+        if (_changeGeneration != previousGeneration && hasConfiguration) {
+          appdata.implicitData['webdavSyncPending'] = true;
+        }
+        appdata.writeImplicitData();
+        await appdata.saveData(false);
+      }
+      _configuring = false;
+      _lastRealtimeCheck = _now;
+      if (mode == DataSyncMode.scheduled) checkForAutomaticSync();
+      if (!_disposed) notifyListeners();
     }
   }
 
@@ -139,9 +291,11 @@ class DataSync with ChangeNotifier {
     debugUploadOverride = null;
     debugDownloadOverride = null;
     debugDisableWindowCloseHandler = false;
+    debugNow = null;
   }
 
   bool _isDownloading = false;
+  bool _downloadApplied = false;
 
   bool get isDownloading => _isDownloading;
 
@@ -163,6 +317,8 @@ class DataSync with ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
+    _scheduleTimer?.cancel();
     appdata.registerSyncDataRequestHandler(null);
     LocalFavoritesManager().removeListener(onDataChanged);
     ComicSourceManager().removeListener(onDataChanged);
@@ -170,6 +326,7 @@ class DataSync with ChangeNotifier {
   }
 
   DataSyncStatusSnapshot get statusSnapshot => DataSyncStatusSnapshot(
+    isConfigured: hasConfiguration,
     isEnabled: isEnabled,
     isUploading: _isUploading,
     isDownloading: _isDownloading,
@@ -177,11 +334,7 @@ class DataSync with ChangeNotifier {
     lastError: _lastError,
   );
 
-  bool get isEnabled {
-    var config = appdata.settings['webdav'];
-    var autoSync = appdata.implicitData['webdavAutoSync'] ?? false;
-    return autoSync && config is List && config.isNotEmpty;
-  }
+  bool get isEnabled => mode != DataSyncMode.manual && hasConfiguration;
 
   WebDavEndpoint? _validateConfig() {
     var config = appdata.settings['webdav'];
@@ -251,6 +404,9 @@ class DataSync with ChangeNotifier {
     activeTask = _runTask(task, run).whenComplete(() {
       if (identical(_activeTask, activeTask)) {
         _activeTask = null;
+        if (mode == DataSyncMode.scheduled && _pendingTask == null) {
+          checkForAutomaticSync();
+        }
       }
     });
     _activeTask = activeTask;
@@ -264,12 +420,23 @@ class DataSync with ChangeNotifier {
     _activeTaskType = task;
     _isUploading = task == _DataSyncTask.upload;
     _isDownloading = task == _DataSyncTask.download;
+    _downloadApplied = false;
     _lastError = null;
+    final generation = _changeGeneration;
+    if (hasConfiguration && !_configuring) {
+      appdata.implicitData['webdavSyncLastAttempt'] =
+          _now.millisecondsSinceEpoch;
+      appdata.writeImplicitData();
+    }
     notifyListeners();
     try {
       final result = await run();
       if (result.error) {
         _lastError = result.errorMessage;
+      } else if (hasConfiguration &&
+          generation == _changeGeneration &&
+          (task == _DataSyncTask.upload || _downloadApplied)) {
+        appdata.implicitData['webdavSyncPending'] = false;
       }
       return result;
     } catch (e, s) {
@@ -280,7 +447,12 @@ class DataSync with ChangeNotifier {
       _activeTaskType = null;
       _isUploading = false;
       _isDownloading = false;
-      notifyListeners();
+      if (hasConfiguration && !_configuring && !_disposed) {
+        appdata.implicitData['webdavSyncLastAttempt'] =
+            _now.millisecondsSinceEpoch;
+        appdata.writeImplicitData();
+      }
+      if (!_disposed) notifyListeners();
     }
   }
 
@@ -371,6 +543,7 @@ class DataSync with ChangeNotifier {
       var localFile = File(FilePath.join(App.cachePath, file.name!));
       await client.read2File(file.name!, localFile.path);
       await importAppData(localFile, true);
+      _downloadApplied = true;
       await localFile.delete();
       HistoryManager().notifyChanges();
       LocalFavoritesManager().notifyChanges();

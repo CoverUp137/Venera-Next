@@ -23,6 +23,7 @@
 ## 目录
 
 - [项目介绍](#项目介绍)
+- [软件截图](#软件截图)
 - [功能亮点](#功能亮点)
 - [下载安装](#下载安装)
 - [快速上手](#快速上手)
@@ -57,11 +58,17 @@
 
 ---
 
+## 软件截图
+
+| 主页：阅读历史、稍后阅读与追更 | 漫画详情页 |
+|---|---|
+| <a href="https://git-pictures.cyrilworkshop.dpdns.org/veneranext/Home.jpg"><img src="https://git-pictures.cyrilworkshop.dpdns.org/veneranext/Home.jpg" alt="VeneraNext 主页，展示阅读历史、稍后阅读和追更" width="100%" /></a> | <a href="https://git-pictures.cyrilworkshop.dpdns.org/veneranext/Details.jpg"><img src="https://git-pictures.cyrilworkshop.dpdns.org/veneranext/Details.jpg" alt="VeneraNext 漫画详情页，展示阅读操作、作品信息和章节列表" width="100%" /></a> |
+
+---
+
 ## 功能亮点
 
 ### 本分支的重点改进
-
-以下能力已包含在截至 **v1.16.0** 的稳定版中；后续版本归属见 [CHANGELOG](CHANGELOG.md)。
 
 | 改进 | 日常使用体验 |
 |---|---|
@@ -76,16 +83,6 @@
 | **更完整的本地漫画库** | 图片目录、CBZ/ZIP/7Z/CB7、PDF 和图片型 EPUB 导入；支持章节目录、自然排序、PDF 批量导入，以及 CBZ 导出和恢复。 |
 | **WebDAV 漫画库与归档** | 在线读取 NAS/WebDAV 图片目录，支持目录缓存、增量同步和元数据；本地漫画还可单独备份为 CBZ 并恢复。 |
 | **数据与桌面体验** | 配置原子写入与备份恢复、同步状态与错误展示、历史清理，以及 Windows 安装器、便携包和 winget 更新。 |
-
-### 主分支的新变化
-
-下面这些改进已合入当前主分支，仍列在 [CHANGELOG 的“未发布”](CHANGELOG.md#未发布) 中，**不属于 v1.16.0 稳定版**：
-
-- **自动选择阅读模式**：根据正文原图比例识别页漫或条漫，按各自偏好切换模式；默认关闭，单本手动指定优先。[使用说明](doc/user/automatic_reader_mode.zh.md)
-- **自动阅读与长按动作**：覆盖七种模式，分页定时翻页，连续与瀑布流支持平滑或步进滚动，可选择自动跨章；触摸、缩放、打开设置或进入后台时暂停推进。
-- **PDF 后台导入**：收起进度后可继续阅读，在“本地”的 PDF 任务入口查看进度、取消或回看结果；多批次依次处理，任务限应用运行期间。[导入说明](doc/user/import_comic.zh.md#pdf)
-- **统一添加来源与多仓库管理**：链接、粘贴内容和 JS/JSON 文件统一识别预览；可选择安装条目、保存多个在线仓库，并查看后台安装、取消、重试和来源关联。[漫画源与源仓库](doc/user/source_repositories.zh.md)
-- **追更与源调试改进**：追更按源限流，取消时停止旧检查；源编辑支持保存并重载、失败保留原源，调试器能等待异步结果。[本地调试](doc/development/source_debugging.zh.md)
 
 ### 延续 Venera 的核心能力
 
@@ -130,16 +127,14 @@ Windows 安装器、便携包和 winget manifest 维护说明见 [doc/distributi
 
 ### Linux
 
-从 [Releases](https://github.com/CyrilPeng/venera-next/releases) 下载对应架构的安装包；RPM 和 AppImage 从包含本次改动的版本开始提供，旧版本可能没有这些资产。
+从 [Releases](https://github.com/CyrilPeng/venera-next/releases) 下载对应架构的安装包：
 
 | 发行版 / 方式 | 安装或运行 |
 |---|---|
 | Debian / Ubuntu（DEB） | `sudo apt install ./venera-next_xxx_amd64.deb`（ARM64 选择 `arm64` 包） |
-| Fedora 等红帽系（RPM） | `sudo dnf install ./venera-next-xxx.x86_64.rpm`（ARM64 选择 `aarch64` 包） |
-| Arch Linux | `sudo pacman -U ./venera-next-xxx-x86_64.pkg.tar.zst` |
-| AppImage | `chmod +x VeneraNext-xxx-linux-x86_64.AppImage`，再执行 `./VeneraNext-xxx-linux-x86_64.AppImage`（也提供 `aarch64`） |
+| Arch Linux（x86_64） | `sudo pacman -U ./venera-next-xxx-x86_64.pkg.tar.zst` |
 
-当前 Linux 构建基于 Ubuntu 22.04，系统需提供兼容的 glibc、GTK 3 和 WebKitGTK 4.1；AppImage 携带应用与 Flutter 运行库，仍依赖这些系统组件。详细依赖、无 FUSE 运行方式及 Actions 构建说明见 [Linux 安装与分发](doc/distribution/linux.zh.md)。
+Linux 安装包基于 Ubuntu 22.04 构建，系统需提供兼容的 glibc、GTK 3 和 WebKitGTK 4.1。
 
 ### macOS
 
@@ -169,20 +164,17 @@ Windows 安装器、便携包和 winget manifest 维护说明见 [doc/distributi
 - **预加载**：瀑布流复用“预加载图片数量”设置。数量越大，可能越早加载后续内容，也会增加网络和内存占用。
 - **拆分双页**：只适用于纵向连续、瀑布流；顺序不合适时开启“交换拆分顺序”。应用仍按原图片记录页数。
 - **继续阅读**：保存章节、页码和章节组；瀑布流会记录实际正在阅读的章节。详情页的正序/倒序只调整章节列表显示。
-- **设置范围**：普通阅读设置按漫画专属、设备专属、全局依次回退，专属设置需先启用。主分支中的单本阅读模式指定有独立优先级。
-- **自动模式识别（主分支）**：默认关闭，只依据正文图片比例，不依赖源站声明；切换保持章节和原图片位置，不保留图片内精确像素偏移。[详细说明](doc/user/automatic_reader_mode.zh.md)
+- **设置范围**：阅读设置按漫画专属、设备专属、全局依次回退，专属设置需先启用。
+
+| 单页阅读模式 | 拆分双页模式 |
+|---|---|
+| <a href="https://git-pictures.cyrilworkshop.dpdns.org/veneranext/Single%20Page%20View.jpg"><img src="https://git-pictures.cyrilworkshop.dpdns.org/veneranext/Single%20Page%20View.jpg" alt="未拆分的单页阅读画面" width="100%" /></a> | <a href="https://git-pictures.cyrilworkshop.dpdns.org/veneranext/Double%20Page%20View.jpg"><img src="https://git-pictures.cyrilworkshop.dpdns.org/veneranext/Double%20Page%20View.jpg" alt="开启拆分双页后的阅读画面" width="100%" /></a> |
 
 ### 夜间与墨水屏阅读
 
 在“设置 → 外观”选择浅色、深色或跟随系统主题；阅读器内的**夜间调光**用于进一步压暗漫画画面。开启后可在阅读设置或底部快捷面板调节 20%–100% 的亮度，它作用于应用内画面，不调整设备系统亮度。
 
 墨水屏设备可选择**画廊模式**并开启“电子墨水屏刷新”：设置每 1～10 次翻页刷新一次、100～1500 毫秒闪屏时长，以及黑色、白色或先白后黑样式。这是阅读器画面的闪屏刷新，效果会受设备自身刷新策略影响。连续与瀑布流模式不触发这一功能。
-
-### 自动阅读与手势（主分支）
-
-开启自动阅读后，画廊模式按间隔翻页；连续与瀑布流可以平滑滚动（10～1000 像素/秒），或步进滚动（每秒 1～10 次、每次 10～500 像素）。可选择是否自动跨章，长图会滚动到底后再继续。
-
-触摸、缩放、设置面板和后台状态会暂停推进，加载失败或读到末章末尾时停止。长按动作可设为放大图片、开始/停止自动阅读或无操作；原有长按缩放偏好会保留。
 
 ### 详情页、稍后阅读与追更
 
@@ -216,9 +208,7 @@ Windows 安装器、便携包和 winget manifest 维护说明见 [doc/distributi
 
 网络内容由用户添加的 JavaScript 扩展提供，不同扩展支持的搜索、探索、分类、账号、收藏和评论入口可能不同。
 
-主分支使用“漫画源 → 添加来源”：粘贴脚本/列表链接或内容，也可选择 JS/JSON 文件；识别后预览再安装。在线列表可保存为仓库，已安装源可关联、切换或解除更新来源。稳定版 v1.16.0 仍使用原有链接/文件和单源列表入口。
-
-安装任务、仓库更新与迁移规则见[漫画源与源仓库](doc/user/source_repositories.zh.md)。编写自己的扩展请直接阅读下方[漫画源开发](#漫画源开发)。
+在漫画源管理页添加兼容的脚本链接或文件。编写自己的扩展请阅读下方[漫画源开发](#漫画源开发)。
 
 ### WebDAV 数据同步、归档与在线漫画库
 
@@ -240,25 +230,20 @@ Windows 安装器、便携包和 winget manifest 维护说明见 [doc/distributi
 
 | 文档 | 内容 |
 |---|---|
-| [漫画源编写指南](doc/api/comic_source.zh.md) | 最小示例、搜索/详情/章节返回规则、图片请求、可选能力与仓库发布 |
+| [漫画源编写指南](doc/api/comic_source.zh.md) | 最小示例、搜索/详情/章节返回规则、图片请求与可选能力 |
 | [最小源模板](doc/examples/minimal_source.js) | 可复制的 JS 文件，使用虚构接口演示完整加载流程 |
 | [JavaScript API](doc/api/js.zh.md) | Network、HTML 解析、数据存储、UI、图片处理及运行时限制 |
-| [本地调试](doc/development/source_debugging.zh.md) | 导入、编辑、重新加载、JS Evaluator、日志与取消边界 |
-| [源仓库使用说明](doc/user/source_repositories.zh.md) | 安装队列、来源关联、版本更新和旧配置迁移 |
+| [本地调试](doc/development/source_debugging.zh.md) | 导入、编辑、JS Evaluator 与日志 |
 
 英文对应文档：[Comic Source Guide](doc/api/comic_source.en.md) · [JavaScript API](doc/api/js.en.md) · [Local Source Debugging](doc/development/source_debugging.en.md)。
 
-本分支继续维护兼容 Venera 的扩展接口。瀑布流、拆分双页、夜间调光和自动阅读由阅读器处理；扩展应提供稳定的漫画/章节标识、正确的章节与图片顺序、有效的更新日期，无需为每一种阅读模式另写一套规则。
+本分支继续维护兼容 Venera 的扩展接口。瀑布流、拆分双页和夜间调光由阅读器处理；扩展应提供稳定的漫画/章节标识、正确的章节与图片顺序、有效的更新日期，无需为每一种阅读模式另写一套规则。
 
 ## FAQ
 
 ### VeneraNext 自带漫画源吗？
 
 不自带，也不提供推荐源列表。可以先导入本地漫画，或自行合法配置兼容扩展、WebDAV 漫画库。
-
-### 为什么找不到 README 提到的部分按钮？
-
-先检查“关于”中的版本。本文标为“主分支”的功能仍在未发布记录中，v1.16.0 稳定版不包含它们；账号、评论、评分等能力还取决于扩展是否实现。
 
 ### 搜索不到内容、图片加载失败或没有追更提示怎么办？
 

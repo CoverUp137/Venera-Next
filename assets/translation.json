@@ -1,5 +1,12 @@
 {
   "zh_CN": {
+    "Sync mode": "同步模式",
+    "Initial sync": "首次同步",
+    "Manual sync": "手动同步",
+    "Real-time sync": "实时同步",
+    "Scheduled sync": "定时同步",
+    "Sync interval": "同步间隔",
+    "Syncs at the selected interval while the app is running. Overdue syncs run when the app reopens. Local changes are uploaded; otherwise, the server is checked for updates.": "应用运行期间按所选间隔同步，重新打开时补做已到期同步。有本地变更时上传，否则检查服务器更新。",
     "Wait for PDF imports to finish or cancel them before changing the local library.": "请等待 PDF 导入完成或取消导入后，再修改本地漫画库。",
     "Local comic storage is busy. Try again later.": "本地漫画存储正在处理其他操作，请稍后重试。",
     "PDF import tasks": "PDF 导入任务",
@@ -833,6 +840,13 @@
     "Failed to load source": "无法加载来源"
   },
   "zh_TW": {
+    "Sync mode": "同步模式",
+    "Initial sync": "首次同步",
+    "Manual sync": "手動同步",
+    "Real-time sync": "即時同步",
+    "Scheduled sync": "定時同步",
+    "Sync interval": "同步間隔",
+    "Syncs at the selected interval while the app is running. Overdue syncs run when the app reopens. Local changes are uploaded; otherwise, the server is checked for updates.": "應用程式執行期間按所選間隔同步，重新開啟時補做已到期同步。有本機變更時上傳，否則檢查伺服器更新。",
     "Wait for PDF imports to finish or cancel them before changing the local library.": "請等待 PDF 匯入完成或取消匯入後，再修改本機漫畫庫。",
     "Local comic storage is busy. Try again later.": "本機漫畫儲存正在處理其他操作，請稍後重試。",
     "PDF import tasks": "PDF 匯入工作",

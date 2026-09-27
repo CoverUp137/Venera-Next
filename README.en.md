@@ -23,6 +23,7 @@
 ## Contents
 
 - [Introduction](#introduction)
+- [Screenshots](#screenshots)
 - [Highlights](#highlights)
 - [Download and installation](#download-and-installation)
 - [Quick start](#quick-start)
@@ -57,11 +58,17 @@ Venera's JavaScript extensions, local reading, search and categories, favorites,
 
 ---
 
+## Screenshots
+
+| Home: history, Read Later, and update tracking | Comic details |
+|---|---|
+| <a href="https://git-pictures.cyrilworkshop.dpdns.org/veneranext/Home.jpg"><img src="https://git-pictures.cyrilworkshop.dpdns.org/veneranext/Home.jpg" alt="VeneraNext home page with reading history, Read Later, and update tracking" width="100%" /></a> | <a href="https://git-pictures.cyrilworkshop.dpdns.org/veneranext/Details.jpg"><img src="https://git-pictures.cyrilworkshop.dpdns.org/veneranext/Details.jpg" alt="VeneraNext comic details page with reading actions, comic information, and chapters" width="100%" /></a> |
+
+---
+
 ## Highlights
 
 ### Improvements in this fork
-
-These features are included in stable releases through **v1.16.0**. See the [changelog](CHANGELOG.md) for individual releases.
 
 | Improvement | What it adds |
 |---|---|
@@ -76,16 +83,6 @@ These features are included in stable releases through **v1.16.0**. See the [cha
 | **Expanded local library** | Import image folders, CBZ/ZIP/7Z/CB7, PDF, and image-based EPUB; support chapter folders, natural sorting, batch PDF import, CBZ export, and recovery. |
 | **WebDAV library and archives** | Read NAS/WebDAV image folders with directory caching, incremental synchronization, and metadata support; back up local comics as CBZ archives and restore them separately. |
 | **Data and desktop improvements** | Atomic settings writes and recovery, sync status and errors, history cleanup, and Windows installers, portable packages, and winget updates. |
-
-### New changes on the main branch
-
-The following changes are merged into the current main branch and remain in the [Unreleased section](CHANGELOG.md#未发布). **They are not part of stable v1.16.0.**
-
-- **Automatic reader mode:** recognize page comics and webtoons from original image proportions and apply separate mode preferences. Off by default; a manual per-comic choice takes priority. [Guide](doc/user/automatic_reader_mode.en.md)
-- **Automatic reading and long-press actions:** timed page turns or smooth/stepped scrolling across all seven modes, with optional chapter transitions. Touch, zoom, settings, and background state pause advancement.
-- **Background PDF import:** keep reading after hiding progress, then use the PDF task button in Local to check progress, cancel, or review results. Batches run sequentially and require the app to remain running. [Import guide](doc/user/import_comic.en.md#pdf)
-- **Unified import and multiple repositories:** preview scripts or catalogs from links, pasted content, or JS/JSON files; select entries, save online repositories, and manage background installation, cancellation, retries, and origins. [Source repositories](doc/user/source_repositories.en.md)
-- **Update checks and source debugging:** rate-limit follow checks per source and stop previous runs on cancellation; save and reload source edits while preserving a working source on failure, and inspect asynchronous evaluator results. [Local debugging](doc/development/source_debugging.en.md)
 
 ### Core Venera capabilities retained
 
@@ -130,16 +127,14 @@ See [Windows Distribution](doc/distribution/windows.en.md) for installer, portab
 
 ### Linux
 
-Download the package matching your distribution and architecture from [Releases](https://github.com/CyrilPeng/venera-next/releases). RPM and AppImage assets start with the release containing this change.
+Download the package matching your distribution and architecture from [Releases](https://github.com/CyrilPeng/venera-next/releases):
 
 | Distribution / format | Install or run |
 |---|---|
 | Debian / Ubuntu (DEB) | `sudo apt install ./venera-next_xxx_amd64.deb` (use `arm64` on ARM64) |
-| Fedora and compatible RPM distributions | `sudo dnf install ./venera-next-xxx.x86_64.rpm` (use `aarch64` on ARM64) |
-| Arch Linux | `sudo pacman -U ./venera-next-xxx-x86_64.pkg.tar.zst` |
-| AppImage | `chmod +x VeneraNext-xxx-linux-x86_64.AppImage`, then `./VeneraNext-xxx-linux-x86_64.AppImage` (`aarch64` is also available) |
+| Arch Linux (x86_64) | `sudo pacman -U ./venera-next-xxx-x86_64.pkg.tar.zst` |
 
-Linux builds use Ubuntu 22.04. AppImage includes the application and Flutter libraries but still requires compatible glibc, GTK 3 and WebKitGTK 4.1 on the host. See [Linux installation and distribution](doc/distribution/linux.en.md) for dependencies, running without FUSE, and Actions builds.
+Linux packages are built on Ubuntu 22.04 and require compatible glibc, GTK 3, and WebKitGTK 4.1 on the host.
 
 ### macOS
 
@@ -169,20 +164,17 @@ Download `VeneraNext-xxx.dmg` from GitHub Releases.
 - **Preloading:** Waterfall reuses the image preload count. Larger values may load content earlier and increase network and memory use.
 - **Split wide images:** available in vertical Continuous and Waterfall only. Swap the split order if needed; page counts still refer to original images.
 - **Resume:** history stores chapter, page, and chapter group. Waterfall records the chapter actually being read. Ascending/descending on the details page only changes the chapter list display.
-- **Setting scope:** ordinary reader settings fall back from enabled per-comic settings to enabled device settings and then global settings. The main branch also has an independent manual per-comic mode override.
-- **Automatic mode recognition (main branch):** off by default and based on body-image proportions rather than source declarations. Switching preserves the chapter and original image position, but not the exact pixel offset inside an image. [Details](doc/user/automatic_reader_mode.en.md)
+- **Setting scope:** reader settings fall back from enabled per-comic settings to enabled device settings and then global settings.
+
+| Single-page view | Split double-page view |
+|---|---|
+| <a href="https://git-pictures.cyrilworkshop.dpdns.org/veneranext/Single%20Page%20View.jpg"><img src="https://git-pictures.cyrilworkshop.dpdns.org/veneranext/Single%20Page%20View.jpg" alt="A wide page before splitting" width="100%" /></a> | <a href="https://git-pictures.cyrilworkshop.dpdns.org/veneranext/Double%20Page%20View.jpg"><img src="https://git-pictures.cyrilworkshop.dpdns.org/veneranext/Double%20Page%20View.jpg" alt="The same spread with double-page splitting enabled" width="100%" /></a> |
 
 ### Nighttime and E-Ink reading
 
 Choose a light, dark, or system theme in Settings → Appearance. **Night dimming** independently darkens the comic in the reader: enable it in reader settings or the bottom quick panel and adjust brightness from 20% to 100%. This changes the in-app image, not the device's system brightness.
 
 For E-Ink devices, choose **Gallery mode** and enable E-Ink display refresh. Set a flash every 1–10 page changes, a duration of 100–1500 ms, and a black, white, or white-then-black style. This is a flash drawn by the reader; results depend on the device's own refresh behavior. Continuous and Waterfall do not trigger it.
-
-### Automatic reading and gestures (main branch)
-
-Gallery turns pages at the configured interval. Continuous and Waterfall can scroll smoothly at 10–1000 pixels/second or in steps at 1–10 steps/second and 10–500 pixels/step. Optional automatic chapter transitions wait until a long image has been scrolled to its end.
-
-Touch, zoom, settings panels, and background state pause advancement. Loading failures or reaching the end of the final chapter stop it. Long press can zoom, start/stop automatic reading, or do nothing; previous zoom preferences are preserved.
 
 ### Comic details, Read Later, and update tracking
 
@@ -216,9 +208,7 @@ See [local import, CBZ, and WebDAV library rules](doc/user/import_comic.en.md) f
 
 User-installed JavaScript extensions provide network content. Search, exploration, categories, accounts, favorites, and comment capabilities vary by extension.
 
-On the main branch, use Comic Source → Add source: paste a script/catalog URL or content, or choose a JS/JSON file, then preview and install. Online catalogs can be saved as repositories, and installed sources can link, switch, or unlink update origins. Stable v1.16.0 uses the previous link/file and single-catalog interfaces.
-
-See [source repositories](doc/user/source_repositories.en.md) for installation tasks, updates, and migration. To write an extension, start with [Developing comic sources](#developing-comic-sources).
+Add a compatible script link or file in Comic Source management. To write an extension, start with [Developing comic sources](#developing-comic-sources).
 
 ### WebDAV data sync, archives, and online library
 
@@ -240,25 +230,20 @@ The shelf displays cached entries first and checks remote changes incrementally.
 
 | Document | Contents |
 |---|---|
-| [Comic Source Guide](doc/api/comic_source.en.md) | Minimal example, search/details/chapter contracts, image requests, optional capabilities, and repository publishing |
+| [Comic Source Guide](doc/api/comic_source.en.md) | Minimal example, search/details/chapter contracts, image requests, and optional capabilities |
 | [Minimal source template](doc/examples/minimal_source.js) | Copyable JS file demonstrating the full loading flow with a fictional API |
 | [JavaScript API](doc/api/js.en.md) | Network, HTML parsing, source storage, UI, image processing, and runtime limits |
-| [Local Source Debugging](doc/development/source_debugging.en.md) | Import, edit, reload, JS Evaluator, logs, and cancellation boundaries |
-| [Source repositories](doc/user/source_repositories.en.md) | Installation queue, origins, updates, and legacy configuration migration |
+| [Local Source Debugging](doc/development/source_debugging.en.md) | Import, edit, JS Evaluator, and logs |
 
 Chinese editions: [漫画源编写指南](doc/api/comic_source.zh.md) · [JavaScript API](doc/api/js.zh.md) · [本地调试](doc/development/source_debugging.zh.md).
 
-This fork continues to maintain Venera-compatible extension interfaces. Waterfall, split spreads, night dimming, and automatic reading are reader responsibilities. Extensions supply stable comic/chapter IDs, correctly ordered chapters and images, and valid update dates; they do not need separate rules for every reader mode.
+This fork continues to maintain Venera-compatible extension interfaces. Waterfall, split spreads, and night dimming are reader responsibilities. Extensions supply stable comic/chapter IDs, correctly ordered chapters and images, and valid update dates; they do not need separate rules for every reader mode.
 
 ## FAQ
 
 ### Does VeneraNext include comic sources?
 
 No source or recommended catalog is bundled. Import local comics or configure a legal compatible extension or WebDAV library.
-
-### Why are some buttons mentioned here missing?
-
-Check your version in About. Features marked “main branch” remain unreleased and are not in stable v1.16.0. Accounts, comments, ratings, and similar capabilities also require implementation by the source.
 
 ### Why are searches, images, or update indicators missing?
 

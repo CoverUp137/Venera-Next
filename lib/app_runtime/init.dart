@@ -47,7 +47,7 @@ Future<void> init() async {
   await App.init().wait();
   await SingleInstanceCookieJar.createInstance();
   configureComicTypeSourceKeyResolver();
-  configureComicSourceDataSavedHandler(() => DataSync().uploadData());
+  configureComicSourceDataSavedHandler(() async => DataSync().onDataChanged());
   configureRuntimeComicSourcesProvider(
     () => WebDavLibraryConfig.fromSettings().isValid
         ? [WebDavLibrarySource.create()]
@@ -103,10 +103,10 @@ Future<void> init() async {
   } catch (e, s) {
     Log.error("init", "$e\n$s");
   }
+  _checkOldConfigs();
   DataSync();
   WebDavLibrarySource.initializeAutoSync();
   CacheManager().setLimitSize(appdata.settings['cacheSize']);
-  _checkOldConfigs();
   if (App.isAndroid) {
     handleLinks();
     handleTextShare();
