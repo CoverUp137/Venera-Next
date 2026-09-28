@@ -6,6 +6,8 @@ Choose a release asset matching `uname -m`: `x86_64` corresponds to x64 / amd64;
 
 ## Installation
 
+DEB builds use `python3 debian/build.py x64` or `python3 debian/build.py arm64` and the system `dpkg-deb`, without installing `flutter_to_debian`. First run `flutter pub get --enforce-lockfile`. Add `--skip-build` to package an existing release bundle. Output is `build/linux/<arch>/release/debian/`. The script owns dependencies, desktop entries, and the existing `/usr/local/lib/venera-next` installation path; it does not modify repository templates. Quality checks build and extract DEBs with ELF fixtures for both architectures; these checks do not replace real platform compilation or runtime tests.
+
 Replace `xxx` with the version in the downloaded filename.
 
 ```bash

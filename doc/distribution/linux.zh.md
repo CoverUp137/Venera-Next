@@ -54,6 +54,8 @@ sudo dnf install gtk3 webkit2gtk4.1
 
 ## GitHub Actions 与本地打包
 
+DEB 由 `python3 debian/build.py x64` 或 `python3 debian/build.py arm64` 构建，使用系统 `dpkg-deb`，不再安装 `flutter_to_debian`。先运行 `flutter pub get --enforce-lockfile`；已有对应架构的 Release bundle 时可加 `--skip-build`。输出为 `build/linux/<架构>/release/debian/`。运行依赖、菜单入口和安装路径由脚本维护，保留 `/usr/local/lib/venera-next` 以兼容已有安装；不再修改仓库内的模板文件。质量检查会用两种架构的 ELF 测试数据执行 DEB 打包与解包，这不代替实际平台编译和运行验证。
+
 “构建”工作流的 Linux x64 / ARM64 开关同时控制该架构的 DEB、RPM、AppImage；x64 还生成 Arch 包。完整发布工作流收集两种新格式并上传 Release。工作流产物分别为 `linux_extra_x64` 和 `linux_extra_arm64`。
 
 Linux runner 在现有 Flutter bundle 上运行：

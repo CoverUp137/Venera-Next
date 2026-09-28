@@ -6,6 +6,8 @@
 
 ### 依赖治理
 
+- 用项目内 Python 脚本和系统 `dpkg-deb` 替代 `flutter_to_debian` 定制依赖及 CI 全局安装；保留运行依赖和安装目录，校验 bundle 架构，修正 ARM64 DEB 上传路径，并增加两种架构真实打包、解包及失败保留旧产物的测试。
+
 - 将 JS 引擎、图片缩放、连续滚动、内嵌 WebView 及 WebDAV 五个依赖切换至 CyrilPeng 下的现有 fork；保持固定 commit 和其余依赖版本不变，WebView 平台子包随主包迁移，并记录维护责任与回滚方式。
 
 - 清理 AltStore 中原版 Venera 的六个安装包及对应新闻；更新脚本限制本项目发布地址并自动清理遗留条目，增加历史保留和来源校验测试。

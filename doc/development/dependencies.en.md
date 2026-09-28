@@ -30,7 +30,6 @@ VeneraNext maintainers own patch selection, upstream review, and validation for 
 | `webdav_client` | `2f669c98fb81cff1c64fee93466a1475c77e4273` | `wgh136/webdav_client` / BSD-3-Clause | The pinned revision adds multiple authentication methods required by WebDAV reading and backup compatibility |
 | `flutter_saf` | `fe182cdf40e5fa6230f451bc1d643b860f610d13` | `pkuislm/flutter_saf` / license file is still a placeholder | The pinned revision disables minification to avoid Android release-build problems; storage access still uses this plugin |
 | `flutter_7zip` | `b33344797f1d2469339e0e1b75f5f954f1da224c` | `wgh136/flutter_7zip` / license file is still a placeholder | The pinned revision fixes compilation errors, and CBZ/archive fallback compatibility still uses this plugin |
-| `flutter_to_debian` | `3777c91b6b1cc0b7c03357c67ca216d4313c3db5` | `jeffrey0606/flutter_to_debian` / MIT | The pinned revision fixes propagation of Debian `Depends`; it is used only for Linux packaging |
 
 The table uses commit messages to explain why the project cannot immediately switch back to upstream. It is not a complete diff audit. Every Git dependency update must document the upstream repository, comparison range, all custom changes, upstream PR if any, security impact, and rollback path.
 
