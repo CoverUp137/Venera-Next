@@ -4,6 +4,31 @@ import os
 from datetime import datetime
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
+from urllib.parse import urlsplit
+
+
+def is_project_release_url(url):
+    parsed = urlsplit(url)
+    return (
+        parsed.scheme == "https"
+        and parsed.netloc.lower() == "github.com"
+        and parsed.path.lower().startswith("/cyrilpeng/venera-next/releases/")
+    )
+
+
+def clean_release_history(data):
+    """Keep this app's distribution history separate from the original app."""
+    for app in data.get("apps", []):
+        if app.get("bundleIdentifier") != "com.github.cyrilpeng.veneranext":
+            continue
+        app["versions"] = [
+            entry for entry in app.get("versions", [])
+            if is_project_release_url(entry.get("downloadURL", ""))
+        ]
+    data["news"] = [
+        entry for entry in data.get("news", [])
+        if is_project_release_url(entry.get("url", ""))
+    ]
 
 def prepare_description(text):
     text = re.sub('<[^<]+?>', '', text) # Remove HTML tags
@@ -96,7 +121,11 @@ def update_json_file_release(json_file, latest_release):
     assets = latest_release.get("assets", [])
     asset = find_ipa_asset(assets, version)
     download_url = asset["browser_download_url"]
+    if not is_project_release_url(download_url):
+        raise RuntimeError("IPA download URL must belong to VeneraNext releases")
     size = asset["size"]
+
+    clean_release_history(data)
 
     version_entry = {
         "version": version,
