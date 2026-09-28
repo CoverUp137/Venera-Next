@@ -126,8 +126,29 @@ Grouped chapters:
 - JavaScript enumerates integer-like object keys in numeric order. Use stable non-integer keys when custom ordering matters, mapping back to service IDs in `loadEp`; the template uses an `ep_` prefix.
 - The details-page ascending/descending setting changes presentation. Do not reverse the source's underlying order to match it.
 - Waterfall preloads neighboring chapters. Return only the requested chapter's images from `loadEp`.
+
 - Requests can run concurrently. Use supplied `comicId`/`epId` parameters rather than global “current comic/chapter” variables.
 - Split spreads, night dimming, E-Ink refresh, automatic reading, and recognition from original image proportions are reader responsibilities. No per-mode source implementation is needed.
+
+#### When the service returns newest-first chapters
+
+The reader uses the source's chapter order for previous/next navigation, automatic chapter transitions, and waterfall continuity. It does not infer order from chapter titles. Ascending/descending controls in chapter lists change presentation only, not the continuous reading direction. Normalize the service's chapters into the intended reading order in `loadComicInfo` before returning `chapters`; fix newest-first service listings in the source first.
+
+Once the API is confirmed to return a newest-first array, copy and reverse it before constructing the chapter object:
+
+```javascript
+// apiChapters: [{ id: "2", title: "Chapter 2" }, { id: "1", title: "Chapter 1" }]
+const chapters = {};
+for (const chapter of [...apiChapters].reverse()) {
+    chapters[`ep_${chapter.id}`] = chapter.title;
+}
+// Return chapters: { ep_1: "Chapter 1", ep_2: "Chapter 2" }
+// In loadEp(comicId, epId), use epId.slice(3) to recover the service ID.
+```
+
+The `ep_` prefix is for new sources that adopt it from the start, as in the minimal template. When correcting an existing source, preserve its chapter IDs: do not renumber chapters using reversed array indices or change every ID prefix just to reorder them. JavaScript reorders integer-like keys numerically, so reversing insertion order alone cannot fix that case. If existing ID formats must change, design a separate compatibility migration and validate old records.
+
+For grouped chapters, check group order and chapter order within each group separately. Reverse only each group's chapters if that is the only incorrect order. Do not unconditionally reverse groups, sort title strings, or reverse chapter images. Validate first/last chapters, manual and automatic transitions, waterfall reading, existing history resume, and offline downloads after updating the source. Stable IDs are necessary for compatibility but do not replace validation of previously saved positions.
 
 ### Update dates and author tags
 
