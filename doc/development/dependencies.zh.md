@@ -6,6 +6,8 @@ English version: [dependencies.en.md](dependencies.en.md)
 
 ## 基本规则
 
+接管进度和逐项替换条件见 [2026-09-28 审计记录](dependency_audit.zh.md)。当前来源、固定提交和全部传递 Git 包见 [git_dependencies.json](git_dependencies.json)；修改 Git 依赖时同步更新清单，并运行 `dart tool/check_git_dependencies.dart`。
+
 - 同时提交 `pubspec.yaml` 和 `pubspec.lock` 的相关变更。
 - 直接依赖优先使用 pub.dev 的稳定版本；使用 Git fork 时必须说明原因。
 - Git 依赖必须固定到不可变 commit，不能使用默认分支、`main` 或 `HEAD`。

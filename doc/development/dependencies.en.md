@@ -6,6 +6,8 @@ This document records governance rules for VeneraNext's direct dependencies, esp
 
 ## Rules
 
+See the [2026-09-28 audit](dependency_audit.en.md) for ownership and replacement decisions. [git_dependencies.json](git_dependencies.json) records current origins, pins, and all transitive Git packages. Update it with every Git dependency change and run `dart tool/check_git_dependencies.dart`.
+
 - Commit related changes to both `pubspec.yaml` and `pubspec.lock`.
 - Prefer stable pub.dev packages. Every Git fork must have a documented reason.
 - Pin Git dependencies to immutable commits. Do not use a default branch, `main`, or `HEAD`.
