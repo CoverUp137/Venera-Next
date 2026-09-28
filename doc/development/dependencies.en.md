@@ -15,6 +15,10 @@ This document records governance rules for VeneraNext's direct dependencies, esp
 
 ## Current Git Dependencies
 
+2026-09-28: `flutter_qjs`, `photo_view`, `flutter.widgets`, `flutter_inappwebview`, and `webdav_client` now use the existing forks under `CyrilPeng`, without changing pinned commits. The six platform subpackages of `flutter_inappwebview` resolve through repository-relative paths to the same fork. This stage changes provenance only, not versions. Roll back `pubspec.yaml` and `pubspec.lock` together.
+
+VeneraNext maintainers own patch selection, upstream review, and validation for these forks. Preserve original copyrights and licenses. Mirroring does not replace ongoing maintenance or resolve missing licenses.
+
 | Dependency | Commit | Upstream / license | Immediate reason for retaining the customized repository |
 |---|---|---|---|
 | `flutter_qjs` | `8feae95df7fb00455df129ad7a0dfec1d0e8d8e4` | Fork upstream not recorded / MIT | The pinned revision includes NDK r28 build support; replacement requires JavaScript runtime and native platform build verification |

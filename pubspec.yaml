@@ -18,7 +18,7 @@ dependencies:
   sqlite3_flutter_libs: ^0.5.42
   flutter_qjs:
     git:
-      url: https://github.com/venera-app/flutter_qjs
+      url: https://github.com/CyrilPeng/flutter_qjs
       ref: 8feae95df7fb00455df129ad7a0dfec1d0e8d8e4
   crypto: ^3.0.7
   dio: ^5.11.0
@@ -28,13 +28,13 @@ dependencies:
   path: ^1.9.0
   photo_view:
     git:
-      url: https://github.com/venera-app/photo_view
+      url: https://github.com/CyrilPeng/photo_view
       ref: a1255d1b5945aad4b7323303ec2ecdf0c90ffc4c
   mime: ^2.1.0
   share_plus: ^12.0.2
   scrollable_positioned_list:
     git:
-      url: https://github.com/venera-app/flutter.widgets
+      url: https://github.com/CyrilPeng/flutter.widgets
       ref: 09e756b1f1b04e6298318d99ec20a787fb360f59
       path: packages/scrollable_positioned_list
   flutter_reorderable_grid_view: ^5.7.0
@@ -46,7 +46,7 @@ dependencies:
       ref: 7801fc582ecf5a7351632887891ecf309a7b2583
   flutter_inappwebview:
     git:
-      url: https://github.com/venera-app/flutter_inappwebview
+      url: https://github.com/CyrilPeng/flutter_inappwebview
       path: flutter_inappwebview
       ref: 3ef899b3db57c911b080979f1392253b835f98ab
   app_links: ^7.0.0
@@ -61,7 +61,7 @@ dependencies:
   rhttp: ^0.15.1
   webdav_client:
     git:
-      url: https://github.com/venera-app/webdav_client
+      url: https://github.com/CyrilPeng/webdav_client
       ref: 2f669c98fb81cff1c64fee93466a1475c77e4273
   battery_plus: ^7.1.1
   local_auth: ^3.0.2

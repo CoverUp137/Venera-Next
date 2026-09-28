@@ -15,6 +15,10 @@ English version: [dependencies.en.md](dependencies.en.md)
 
 ## 当前 Git 依赖
 
+2026-09-28：`flutter_qjs`、`photo_view`、`flutter.widgets`、`flutter_inappwebview` 和 `webdav_client` 已改用 `CyrilPeng` 下的现有 fork，固定 commit 不变。`flutter_inappwebview` 的六个平台子包通过仓库内相对路径一起解析到同一 fork。此阶段只迁移来源，不升级版本；回滚时同时恢复 `pubspec.yaml` 和 `pubspec.lock`。
+
+这些 fork 的补丁选择、上游审查和更新验证由 VeneraNext 维护者负责。保留原作者版权和许可证；镜像不能替代持续维护，也不能解决许可证缺失。
+
 | 依赖 | 当前 commit | 上游 / 许可证 | 暂时保留定制仓库的直接原因 |
 |---|---|---|---|
 | `flutter_qjs` | `8feae95df7fb00455df129ad7a0dfec1d0e8d8e4` | 未记录 fork 上游 / MIT | 固定版本包含 NDK r28 构建适配；替换前必须验证 JavaScript 运行时和各平台原生构建 |
