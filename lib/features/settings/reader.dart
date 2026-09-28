@@ -526,6 +526,21 @@ class _ReaderSettingsState extends State<ReaderSettings> {
         ).toSliver(),
         SliverAnimatedVisibility(
           visible: _isVerticalFlowMode,
+          child: SliderSetting(
+            title: 'Side margins (each side)'.tl,
+            settingsIndex: 'readerSideMargin',
+            interval: 1,
+            min: 0,
+            max: 30,
+            valueFormatter: (value) => '${value.toInt()}%',
+            onChanged: () => widget.onChanged?.call('readerSideMargin'),
+            comicId: isEnabledSpecificSettings ? widget.comicId : null,
+            comicSource: isEnabledSpecificSettings ? widget.comicSource : null,
+            useDeviceSettings: useDeviceSpecificSettings,
+          ),
+        ),
+        SliverAnimatedVisibility(
+          visible: _isVerticalFlowMode,
           child: SwitchSetting(
             title: 'Split dual pages'.tl,
             subtitle:

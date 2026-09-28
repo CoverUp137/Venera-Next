@@ -42,6 +42,7 @@ English index: [README.en.md](README.en.md)
 
 - [应用数据同步](user/data_sync.zh.md) / [App-data synchronization](user/data_sync.en.md)
 - [自动选择阅读模式](user/automatic_reader_mode.zh.md) / [Automatic Reader Mode](user/automatic_reader_mode.en.md)
+- [条漫左右边距](user/reader_width.zh.md) / [Reader side margins](user/reader_width.en.md)
 - [漫画源与源仓库](user/source_repositories.zh.md) / [Source repositories](user/source_repositories.en.md)
 - [本地漫画导入](user/import_comic.zh.md) / [Import Comic](user/import_comic.en.md)
 - [无头命令模式](user/headless.zh.md) / [Headless Mode](user/headless.en.md)

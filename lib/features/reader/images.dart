@@ -1572,10 +1572,28 @@ class ContinuousModeState extends State<_ContinuousMode>
     );
     var width = reader.size.width;
     var height = reader.size.height;
-    if (appdata.settings['limitImageWidth'] &&
+    if (appdata.settings.getReaderSetting(
+              reader.cid,
+              reader.type.sourceKey,
+              'limitImageWidth',
+            ) ==
+            true &&
         width / height > 0.7 &&
         reader.mode.isTopToBottom) {
       width = height * 0.7;
+    }
+    if (reader.mode.isTopToBottom) {
+      final margin = appdata.settings.getReaderSetting(
+        reader.cid,
+        reader.type.sourceKey,
+        'readerSideMargin',
+      );
+      final percent = margin is num && margin.isFinite
+          ? margin.clamp(0, 30)
+          : 0;
+      // Resize the flow itself so images retain their aspect ratio and scroll
+      // extents match the visible content, including waterfall and auto-reading.
+      width *= 1 - percent * 2 / 100;
     }
 
     return PhotoView.customChild(
