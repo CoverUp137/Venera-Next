@@ -24,14 +24,14 @@ RPM 安装后可从应用菜单或 `venera-next` 命令启动。升级时再次�
 ## AppImage
 
 ```bash
-chmod +x VeneraNext-xxx-linux-x86_64.AppImage
-./VeneraNext-xxx-linux-x86_64.AppImage
+chmod +x VeneraNext-xxx-x86_64.AppImage
+./VeneraNext-xxx-x86_64.AppImage
 ```
 
 ARM64 使用文件名含 `aarch64` 的版本。无法挂载 FUSE 时，可使用无需 FUSE 的解包运行方式：
 
 ```bash
-./VeneraNext-xxx-linux-x86_64.AppImage --appimage-extract-and-run
+./VeneraNext-xxx-x86_64.AppImage --appimage-extract-and-run
 ```
 
 AppImage 不需管理员权限，不会自动安装菜单入口；下载新文件替换旧文件即可更新。应用数据仍使用系统用户数据目录，不保存到 AppImage 文件内。
@@ -40,7 +40,9 @@ AppImage 不需管理员权限，不会自动安装菜单入口；下载新文�
 
 所有 Linux 格式目前复用 Ubuntu 22.04 编译的程序，需要兼容的 glibc（基线 2.35）、libstdc++、GTK 3 和 WebKitGTK 4.1。RPM 使用 ELF 依赖检测记录所需符号版本；包管理器会拒绝缺失依赖的安装。
 
-AppImage 携带 Flutter 引擎、应用资源和插件库，但不打包 glibc、GTK 或 WebKitGTK。先安装运行依赖，例如：
+自 v1.17.0-rc.2 起，AppImage 携带 Flutter、GTK 3、WebKitGTK 4.1、WebKit 子进程、图片加载器及相关运行资源，无需额外安装 GTK/WebKit。仍需宿主提供 glibc 2.35 或更新版本，以及兼容的 OpenGL/EGL 显卡驱动。新文件名为 `VeneraNext-<版本>-x86_64.AppImage` 或 `VeneraNext-<版本>-aarch64.AppImage`，不再包含 `linux`。
+
+已经发布的 **v1.17.0-rc.1 AppImage 未包含 GTK/WebKit**，文件名包含 linux；该版本仍需手动安装以下运行依赖。DEB/RPM 继续通过包管理器获取系统依赖：
 
 ```bash
 # Ubuntu 22.04 / Debian 等
@@ -66,4 +68,10 @@ python3 .github/scripts/build_linux_packages.py --arch x64
 # ARM64 runner 使用 --arch arm64
 ```
 
-脚本校验 ELF 架构和 Flutter 资源，生成并检查 RPM，解包生成的 AppImage 检查入口及资源。AppImage 工具固定为 appimagetool 1.9.1、type2-runtime 20251108，并分别校验两个架构的 SHA-256；构建无需 FUSE。产物位于 `build/linux/<架构>/packages/`。
+脚本校验 ELF 架构和 Flutter 资源，生成并检查 RPM；AppImage 递归收集 ELF 依赖，检查 WebKit 辅助进程及可重定位资源路径，解包后再次验证依赖闭包。glibc 和显卡驱动保留为宿主接口，其余缺库会使构建失败。依赖版本清单和版权说明位于包内 `usr/share/doc/venera-next-runtime/`。
+
+AppImage 构建所需的 GTK/WebKit 开发包及运行资源包见 `.github/workflows/build.yml` 的 Linux 安装步骤。构建后运行 `bash .github/scripts/test_appimage.sh x64`（ARM64 使用 `arm64`），需要 C 编译器、pkg-config 和 Docker。该检查在不安装 GTK/WebKit 的 Ubuntu 22.04 容器内验证真实应用窗口及 WebKit 子进程加载 HTML；容器测试专用的 WebKit 沙箱关闭设置不会写入分发包。两个架构均在 CI 上传产物前执行。
+
+检查还会放开外层 Docker 的 seccomp 限制，再显式开启 WebKit 自身沙箱复验。Ubuntu 的 WebKit 发布版不支持通过 `WEBKIT_EXEC_PATH` 重定位，因此启动器在权限为 0700 的 `/tmp` 私有目录中生成库副本，替换子进程与沙箱辅助程序路径，退出时清理；不修改系统或原始 AppImage。运行时需要 `/tmp` 可写、可执行，并留有约 100 MB 空间用于该副本；不支持的 WebKit 路径布局会明确失败。
+
+AppImage 工具固定为 appimagetool 1.9.1、type2-runtime 20251108，并分别校验两个架构的 SHA-256；构建无需 FUSE。产物位于 `build/linux/<架构>/packages/`。如需回滚，恢复旧打包脚本和工作流并重新构建；回滚产物需要用户自行安装 GTK/WebKit，应用数据格式不受影响。

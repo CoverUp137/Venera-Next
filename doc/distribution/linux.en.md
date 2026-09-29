@@ -24,17 +24,19 @@ Start the RPM installation from the application menu or `venera-next`. Install a
 ## AppImage
 
 ```bash
-chmod +x VeneraNext-xxx-linux-x86_64.AppImage
-./VeneraNext-xxx-linux-x86_64.AppImage
+chmod +x VeneraNext-xxx-x86_64.AppImage
+./VeneraNext-xxx-x86_64.AppImage
 # Run without FUSE when mounting is unavailable:
-./VeneraNext-xxx-linux-x86_64.AppImage --appimage-extract-and-run
+./VeneraNext-xxx-x86_64.AppImage --appimage-extract-and-run
 ```
 
 Use the `aarch64` asset for ARM64. No administrator permission is needed. Menu integration is not installed automatically. Replace the file to upgrade; application data remains in your system user data directory.
 
 ## Compatibility and dependencies
 
-Linux packages share a binary compiled on Ubuntu 22.04, requiring compatible glibc (baseline 2.35), libstdc++, GTK 3, and WebKitGTK 4.1. RPM records system ELF symbol requirements automatically. AppImage includes Flutter and application/plugin libraries, but does not bundle glibc, GTK or WebKitGTK. Install host dependencies first:
+Linux packages share a binary compiled on Ubuntu 22.04 with a glibc 2.35 baseline. RPM records system ELF symbol requirements automatically. Starting with v1.17.0-rc.2, AppImage builds include GTK 3, WebKitGTK 4.1, its helper processes, image loaders and runtime resources. They still require compatible host glibc and OpenGL/EGL drivers. New filenames are `VeneraNext-<version>-x86_64.AppImage` or `VeneraNext-<version>-aarch64.AppImage`, without `linux`.
+
+The already published **v1.17.0-rc.1 AppImage does not bundle GTK/WebKit** and uses filenames containing linux. That release still needs the following host packages; DEB/RPM continue to use system dependencies:
 
 ```bash
 sudo apt install libgtk-3-0 libwebkit2gtk-4.1-0  # Ubuntu / Debian
@@ -55,4 +57,10 @@ python3 .github/scripts/build_linux_packages.py --arch x64
 # Use --arch arm64 on an ARM64 runner.
 ```
 
-The script checks ELF architecture and Flutter resources, builds and inspects the RPM, and extracts the resulting AppImage to verify its entry point and resources. Both architectures use SHA-256-verified appimagetool 1.9.1 and type2-runtime 20251108. Packaging does not require FUSE. Outputs are in `build/linux/<architecture>/packages/`.
+The script checks ELF architecture and Flutter resources, builds and inspects the RPM, recursively collects AppImage ELF dependencies and verifies the dependency closure again after extraction. WebKit helpers and relocatable resource paths are required. Only glibc and graphics drivers remain host interfaces; missing other libraries fail packaging. Dependency versions and copyright notices are included under `usr/share/doc/venera-next-runtime/`.
+
+See the Linux installation steps in `.github/workflows/build.yml` for GTK/WebKit development and runtime build packages. After packaging, run `bash .github/scripts/test_appimage.sh x64` (or `arm64`), using a C compiler, pkg-config and Docker. CI runs this before uploading either architecture: an Ubuntu 22.04 container without GTK/WebKit must display the application window and load HTML in a WebKit helper process. The container-only WebKit sandbox override is never included in the distributed launcher.
+
+A second pass relaxes Docker's outer seccomp policy and explicitly enables WebKit's own sandbox. Ubuntu release builds ignore `WEBKIT_EXEC_PATH`, so the launcher relocates compiled-in helper paths in a private library copy under a mode-0700 `/tmp` directory, cleaned up on exit. It never modifies the system or original AppImage. `/tmp` must be writable and executable, with approximately 100 MB available for this copy; unsupported WebKit path layouts fail explicitly.
+
+Both architectures use SHA-256-verified appimagetool 1.9.1 and type2-runtime 20251108. Packaging does not require FUSE. Outputs are in `build/linux/<architecture>/packages/`. To roll back, restore the previous packaging scripts and workflow and rebuild; those images require host GTK/WebKit again. Application data formats are unchanged.

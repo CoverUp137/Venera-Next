@@ -363,10 +363,12 @@ jobs:
       - name: 安装 Linux 构建依赖
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y ninja-build libgtk-3-dev webkit2gtk-4.1 rpm squashfs-tools desktop-file-utils file
+          sudo apt-get install -y ninja-build libgtk-3-dev webkit2gtk-4.1 libwebkit2gtk-4.1-dev libgdk-pixbuf2.0-bin librsvg2-common glib-networking gstreamer1.0-plugins-base gstreamer1.0-plugins-good gsettings-desktop-schemas shared-mime-info adwaita-icon-theme fontconfig-config bubblewrap xdg-dbus-proxy rpm squashfs-tools desktop-file-utils file
       - run: python3 debian/build.py x64
       - name: 构建 RPM 和 AppImage
         run: python3 .github/scripts/build_linux_packages.py --arch x64
+      - name: 在无 GTK 和 WebKit 的容器中验证 AppImage
+        run: bash .github/scripts/test_appimage.sh x64
       - uses: actions/upload-artifact@v7
         with:
           name: linux_extra_x64
@@ -411,12 +413,14 @@ jobs:
       - name: 安装 Linux 构建依赖
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y ninja-build libgtk-3-dev webkit2gtk-4.1 rpm squashfs-tools desktop-file-utils file
+          sudo apt-get install -y ninja-build libgtk-3-dev webkit2gtk-4.1 libwebkit2gtk-4.1-dev libgdk-pixbuf2.0-bin librsvg2-common glib-networking gstreamer1.0-plugins-base gstreamer1.0-plugins-good gsettings-desktop-schemas shared-mime-info adwaita-icon-theme fontconfig-config bubblewrap xdg-dbus-proxy rpm squashfs-tools desktop-file-utils file
       - name: 修补字体
         run: dart run patch/font.dart
       - run: python3 debian/build.py arm64
       - name: 构建 RPM 和 AppImage
         run: python3 .github/scripts/build_linux_packages.py --arch arm64
+      - name: 在无 GTK 和 WebKit 的容器中验证 AppImage
+        run: bash .github/scripts/test_appimage.sh arm64
       - uses: actions/upload-artifact@v7
         with:
           name: linux_extra_arm64

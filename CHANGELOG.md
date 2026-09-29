@@ -2,7 +2,16 @@
 
 本项目遵循语义化版本，记录 fork 后的主要变更。
 
-## 未发布
+## v1.17.0-rc.2
+
+这是 v1.17.0 的第二个预发行版，重点修复 Linux AppImage 在未安装 WebKitGTK 的系统上无法启动的问题，并保留 rc.1 的全部功能。
+
+请重点验证 AppImage 启动、内嵌网页及漫画源登录。AppImage 仍需要 glibc 2.35 或更新版本、兼容的 OpenGL/EGL 驱动，以及可写、可执行并留有约 100 MB 空间的 `/tmp`。此版本不修改应用数据格式；如需回退，可使用 rc.1，但其 AppImage 需要系统安装 GTK/WebKit。
+
+### 修复
+
+- AppImage 打包 GTK 3、WebKitGTK 4.1 及依赖库、WebKit 子进程与沙箱辅助程序、图片加载器和字体配置，修复 AppImageHub 测试中缺少 `libwebkit2gtk-4.1.so.0` 导致启动失败的问题；通过私有临时副本重定位 WebKit 发布版硬编码路径，保留 glibc 2.35 与宿主显卡驱动要求，随包保存依赖版本和版权说明。
+- AppImage 文件名移除多余的 `linux`；两个 Linux 架构增加无预装 GTK/WebKit 容器中的窗口启动及 WebKit 网页加载检查，打包时拒绝遗漏非系统基础运行库。
 
 ### 文档
 

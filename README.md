@@ -136,11 +136,11 @@ Windows 安装器、便携包和 winget manifest 维护说明见 [doc/distributi
 | Debian / Ubuntu（DEB） | `sudo apt install ./venera-next_xxx_amd64.deb`（ARM64 选择 `arm64` 包） |
 | Fedora 等提供所需依赖的发行版（RPM） | `sudo dnf install ./venera-next-xxx.x86_64.rpm`（ARM64 选择 `aarch64` 包） |
 | Arch Linux（x86_64） | `sudo pacman -U ./venera-next-xxx-x86_64.pkg.tar.zst` |
-| AppImage（x86_64 / ARM64） | `chmod +x VeneraNext-xxx-linux-x86_64.AppImage`，再执行 `./VeneraNext-xxx-linux-x86_64.AppImage`（ARM64 选择 `aarch64` 文件） |
+| AppImage（x86_64 / ARM64） | `chmod +x VeneraNext-xxx-x86_64.AppImage`，再执行 `./VeneraNext-xxx-x86_64.AppImage`（ARM64 选择 `aarch64` 文件） |
 
 `xxx` 请替换为下载文件中的实际版本号。RPM 和 AppImage 已随 [v1.17.0-rc.1 预发行版](https://github.com/CyrilPeng/Venera-Next/releases/tag/v1.17.0-rc.1) 提供，均支持 x86_64 和 ARM64；可用 `uname -m` 查看机器架构。
 
-Linux 安装包基于 Ubuntu 22.04 构建，系统需提供兼容的 glibc（基线 2.35）、GTK 3 和 WebKitGTK 4.1，AppImage 也需要这些系统库。依赖安装、FUSE 问题及发行版兼容范围见 [Linux 安装与分发](doc/distribution/linux.zh.md)。
+Linux 安装包基于 Ubuntu 22.04 构建，glibc 基线为 2.35。已发布的 v1.17.0-rc.1 AppImage 仍需系统 GTK 3 和 WebKitGTK 4.1；v1.17.0-rc.2 将这些运行库打入 AppImage，并移除文件名中的 `linux`，仍需兼容的系统 glibc 和显卡驱动。依赖安装、FUSE 问题及发行版兼容范围见 [Linux 安装与分发](doc/distribution/linux.zh.md)。
 
 ### macOS
 

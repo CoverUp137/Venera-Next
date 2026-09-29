@@ -10,6 +10,10 @@ import shutil
 import subprocess
 import tempfile
 import urllib.request
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from appimage_runtime import collect_runtime, validate_runtime
 
 ROOT = Path(__file__).resolve().parents[2]
 ARCHES = {"x64": ("x86_64", 62), "arm64": ("aarch64", 183)}
@@ -141,8 +145,8 @@ def stage_appdir(bundle, appdir):
     apprun.write_text('''#!/bin/sh
 set -eu
 APPDIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
-export LD_LIBRARY_PATH="$APPDIR/usr/lib/venera-next/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-exec "$APPDIR/usr/lib/venera-next/venera-next" "$@"
+. "$APPDIR/runtime-env.sh"
+"$APPDIR/usr/lib/venera-next/venera-next" "$@"
 ''', encoding="utf-8", newline="\n")
     apprun.chmod(0o755)
 
@@ -150,6 +154,7 @@ exec "$APPDIR/usr/lib/venera-next/venera-next" "$@"
 def build_appimage(bundle, out, arch, version, work):
     appdir = work / "VeneraNext.AppDir"
     stage_appdir(bundle, appdir)
+    collect_runtime(appdir)
     cache = out / "tools"
     cache.mkdir(exist_ok=True)
     machine = ARCHES[arch][0]
@@ -165,7 +170,7 @@ def build_appimage(bundle, out, arch, version, work):
     )
     # Extract the build tool so CI does not need FUSE or a privileged container.
     run(tool, "--appimage-extract", cwd=work, stdout=subprocess.DEVNULL)
-    package = out / f"VeneraNext-{version}-linux-{machine}.AppImage"
+    package = out / f"VeneraNext-{version}-{machine}.AppImage"
     run(work / "squashfs-root/AppRun", "--no-appstream", "--runtime-file", runtime,
         appdir, package, env={**os.environ, "ARCH": machine, "SOURCE_DATE_EPOCH": os.environ.get("SOURCE_DATE_EPOCH", "0")})
     if not package.exists() or package.stat().st_size == 0:
@@ -176,6 +181,7 @@ def build_appimage(bundle, out, arch, version, work):
     extracted.mkdir()
     run(package, "--appimage-extract", cwd=extracted, stdout=subprocess.DEVNULL)
     validate_bundle(extracted / "squashfs-root/usr/lib/venera-next", arch)
+    validate_runtime(extracted / "squashfs-root")
     if not os.access(extracted / "squashfs-root/AppRun", os.X_OK):
         raise RuntimeError("AppImage entry point is not executable")
 

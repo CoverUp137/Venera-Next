@@ -138,11 +138,11 @@ Download the package matching your distribution and architecture from [Releases]
 | Debian / Ubuntu (DEB) | `sudo apt install ./venera-next_xxx_amd64.deb` (use `arm64` on ARM64) |
 | Fedora and other distributions providing the required dependencies (RPM) | `sudo dnf install ./venera-next-xxx.x86_64.rpm` (use `aarch64` on ARM64) |
 | Arch Linux (x86_64) | `sudo pacman -U ./venera-next-xxx-x86_64.pkg.tar.zst` |
-| AppImage (x86_64 / ARM64) | Run `chmod +x VeneraNext-xxx-linux-x86_64.AppImage`, then `./VeneraNext-xxx-linux-x86_64.AppImage` (use the `aarch64` file on ARM64) |
+| AppImage (x86_64 / ARM64) | Run `chmod +x VeneraNext-xxx-x86_64.AppImage`, then `./VeneraNext-xxx-x86_64.AppImage` (use the `aarch64` file on ARM64) |
 
 Replace `xxx` with the actual version in the downloaded filename. RPM and AppImage packages are available in the [v1.17.0-rc.1 prerelease](https://github.com/CyrilPeng/Venera-Next/releases/tag/v1.17.0-rc.1), both for x86_64 and ARM64. Use `uname -m` to check your architecture.
 
-Linux packages are built on Ubuntu 22.04 and require compatible glibc (baseline 2.35), GTK 3, and WebKitGTK 4.1 on the host, including for AppImage. See [Linux Installation and Distribution](doc/distribution/linux.en.md) for dependencies, FUSE troubleshooting, and distribution compatibility.
+Linux packages are built on Ubuntu 22.04 with a glibc 2.35 baseline. The published v1.17.0-rc.1 AppImage still needs host GTK 3 and WebKitGTK 4.1. v1.17.0-rc.2 bundles these libraries and removes `linux` from the AppImage filename, while retaining host glibc and graphics driver requirements. See [Linux Installation and Distribution](doc/distribution/linux.en.md) for dependencies, FUSE troubleshooting, and distribution compatibility.
 
 ### macOS
 
