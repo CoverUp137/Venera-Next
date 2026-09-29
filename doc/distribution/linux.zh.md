@@ -72,6 +72,6 @@ python3 .github/scripts/build_linux_packages.py --arch x64
 
 AppImage 构建所需的 GTK/WebKit 开发包及运行资源包见 `.github/workflows/build.yml` 的 Linux 安装步骤。构建后运行 `bash .github/scripts/test_appimage.sh x64`（ARM64 使用 `arm64`），需要 C 编译器、pkg-config 和 Docker。该检查在不安装 GTK/WebKit 的 Ubuntu 22.04 容器内验证真实应用窗口及 WebKit 子进程加载 HTML；容器测试专用的 WebKit 沙箱关闭设置不会写入分发包。两个架构均在 CI 上传产物前执行。
 
-检查还会放开外层 Docker 的 seccomp 限制，再显式开启 WebKit 自身沙箱复验。Ubuntu 的 WebKit 发布版不支持通过 `WEBKIT_EXEC_PATH` 重定位，因此启动器在权限为 0700 的 `/tmp` 私有目录中生成库副本，替换子进程与沙箱辅助程序路径，退出时清理；不修改系统或原始 AppImage。运行时需要 `/tmp` 可写、可执行，并留有约 100 MB 空间用于该副本；不支持的 WebKit 路径布局会明确失败。
+检查还会放开外层 Docker 的 seccomp/AppArmor 限制，再显式开启 WebKit 自身沙箱复验。Ubuntu 的 WebKit 发布版不支持通过 `WEBKIT_EXEC_PATH` 重定位，因此启动器在权限为 0700 的 `/tmp` 私有目录中生成库副本，替换子进程与沙箱辅助程序路径，退出时清理；不修改系统或原始 AppImage。运行时需要 `/tmp` 可写、可执行，并留有约 100 MB 空间用于该副本；不支持的 WebKit 路径布局会明确失败。
 
 AppImage 工具固定为 appimagetool 1.9.1、type2-runtime 20251108，并分别校验两个架构的 SHA-256；构建无需 FUSE。产物位于 `build/linux/<架构>/packages/`。如需回滚，恢复旧打包脚本和工作流并重新构建；回滚产物需要用户自行安装 GTK/WebKit，应用数据格式不受影响。

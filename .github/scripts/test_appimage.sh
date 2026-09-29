@@ -17,6 +17,7 @@ timeout 120 docker run --rm --network none \
 # Allow nested namespaces in Docker, then explicitly enable WebKit's own
 # sandbox. This catches missing bubblewrap/dbus-proxy files and sandbox mounts.
 timeout 120 docker run --rm --network none --security-opt seccomp=unconfined \
+  --security-opt apparmor=unconfined \
   -e VENERA_SMOKE_SANDBOX=1 \
   --mount "type=bind,source=$packages,target=/packages,readonly" \
   --mount "type=bind,source=$root/.github/scripts,target=/scripts,readonly" \
