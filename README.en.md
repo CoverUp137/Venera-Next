@@ -136,9 +136,13 @@ Download the package matching your distribution and architecture from [Releases]
 | Distribution / format | Install or run |
 |---|---|
 | Debian / Ubuntu (DEB) | `sudo apt install ./venera-next_xxx_amd64.deb` (use `arm64` on ARM64) |
+| Fedora and other distributions providing the required dependencies (RPM) | `sudo dnf install ./venera-next-xxx.x86_64.rpm` (use `aarch64` on ARM64) |
 | Arch Linux (x86_64) | `sudo pacman -U ./venera-next-xxx-x86_64.pkg.tar.zst` |
+| AppImage (x86_64 / ARM64) | Run `chmod +x VeneraNext-xxx-linux-x86_64.AppImage`, then `./VeneraNext-xxx-linux-x86_64.AppImage` (use the `aarch64` file on ARM64) |
 
-Linux packages are built on Ubuntu 22.04 and require compatible glibc, GTK 3, and WebKitGTK 4.1 on the host.
+Replace `xxx` with the actual version in the downloaded filename. RPM and AppImage packages are available in the [v1.17.0-rc.1 prerelease](https://github.com/CyrilPeng/Venera-Next/releases/tag/v1.17.0-rc.1), both for x86_64 and ARM64. Use `uname -m` to check your architecture.
+
+Linux packages are built on Ubuntu 22.04 and require compatible glibc (baseline 2.35), GTK 3, and WebKitGTK 4.1 on the host, including for AppImage. See [Linux Installation and Distribution](doc/distribution/linux.en.md) for dependencies, FUSE troubleshooting, and distribution compatibility.
 
 ### macOS
 

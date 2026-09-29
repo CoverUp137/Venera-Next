@@ -2,7 +2,7 @@
 
 [简体中文](linux.zh.md) · [README](../../README.en.md#linux)
 
-Choose a release asset matching `uname -m`: `x86_64` corresponds to x64 / amd64; `aarch64` corresponds to ARM64 / arm64. RPM and AppImage are available starting with the release containing this change, and as artifacts of the **构建** (Build) Actions workflow.
+Choose an asset from [GitHub Releases](https://github.com/CyrilPeng/Venera-Next/releases) matching `uname -m`: `x86_64` corresponds to x64 / amd64; `aarch64` corresponds to ARM64 / arm64. RPM and AppImage are available starting with [v1.17.0-rc.1](https://github.com/CyrilPeng/Venera-Next/releases/tag/v1.17.0-rc.1), both for x86_64 and ARM64, and as artifacts of the **构建** (Build) Actions workflow.
 
 ## Installation
 

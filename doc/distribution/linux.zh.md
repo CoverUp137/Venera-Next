@@ -2,7 +2,7 @@
 
 [English](linux.en.md) · [返回 README](../../README.md#linux)
 
-从 GitHub Releases 下载与机器架构对应的包。`uname -m` 输出 `x86_64` 时选择 x64 / amd64，输出 `aarch64` 时选择 ARM64 / arm64。RPM 和 AppImage 从包含本次改动的版本开始提供；也可在 GitHub Actions 的“构建”工作流中下载产物。
+从 [GitHub Releases](https://github.com/CyrilPeng/Venera-Next/releases) 下载与机器架构对应的包。`uname -m` 输出 `x86_64` 时选择 x64 / amd64，输出 `aarch64` 时选择 ARM64 / arm64。RPM 和 AppImage 从 [v1.17.0-rc.1](https://github.com/CyrilPeng/Venera-Next/releases/tag/v1.17.0-rc.1) 起提供，两种格式均支持 x86_64 和 ARM64；也可在 GitHub Actions 的“构建”工作流中下载产物。
 
 ## 安装
 
