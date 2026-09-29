@@ -18,6 +18,7 @@ timeout 120 docker run --rm --network none \
 # sandbox. This catches missing bubblewrap/dbus-proxy files and sandbox mounts.
 timeout 120 docker run --rm --network none --security-opt seccomp=unconfined \
   --security-opt apparmor=unconfined \
+  --security-opt systempaths=unconfined \
   -e VENERA_SMOKE_SANDBOX=1 \
   --mount "type=bind,source=$packages,target=/packages,readonly" \
   --mount "type=bind,source=$root/.github/scripts,target=/scripts,readonly" \
