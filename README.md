@@ -7,7 +7,7 @@
   # VeneraNext
 
   ![Flutter](https://img.shields.io/badge/Flutter-3.41.4-02569B?logo=flutter&logoColor=white&style=flat-square)
-  [![Release](https://img.shields.io/github/v/release/CyrilPeng/venera-next?label=Release&color=10B981&style=flat-square)](https://github.com/CyrilPeng/venera-next/releases)
+  [![Release](https://img.shields.io/github/v/release/CyrilPeng/venera-next?label=Release&color=10B981&style=flat-square)](https://github.com/CyrilPeng/venera-next/releases/latest)
   ![License](https://img.shields.io/badge/License-GPL--3.0-10B981?style=flat-square)
   <br>
   [![Downloads](https://img.shields.io/github/downloads/CyrilPeng/venera-next/total?style=flat-square&color=2ea44f&logo=github)](https://tooomm.github.io/github-release-stats/?user=CyrilPeng&repo=venera-next)
@@ -98,9 +98,11 @@
 
 ## 下载安装
 
+当前稳定版为 [v1.17.0](https://github.com/CyrilPeng/Venera-Next/releases/tag/v1.17.0)。下方下载入口默认指向最新稳定版。
+
 ### Android
 
-从 [Releases](https://github.com/CyrilPeng/venera-next/releases) 下载 APK 安装包：
+从 [最新稳定版](https://github.com/CyrilPeng/venera-next/releases/latest) 下载 APK 安装包：
 
 | 文件名 | 说明 | 适用场景 |
 |---|---|---|
@@ -112,7 +114,7 @@
 
 ### iOS
 
-从 Releases 下载 ipa 安装包，使用 AltStore 旁加载。
+从 [最新稳定版](https://github.com/CyrilPeng/venera-next/releases/latest) 下载 ipa 安装包，使用 AltStore 旁加载。
 
 ### Windows
 
@@ -123,13 +125,13 @@ winget install --id CyrilPeng.VeneraNext --exact
 winget upgrade --id CyrilPeng.VeneraNext --exact
 ```
 
-也可以从 Releases 下载 `VeneraNext-xxx-windows-installer.exe` 安装包或 zip 便携版。便携版不受 winget 管理，需要手动下载新版本并覆盖更新。新版本发布后，winget 公共源可能需要等待 Microsoft 审核；可先执行 `winget source update` 刷新本地索引。
+也可以从 [最新稳定版](https://github.com/CyrilPeng/venera-next/releases/latest) 下载 `VeneraNext-xxx-windows-installer.exe` 安装包或 zip 便携版。便携版不受 winget 管理，需要手动下载新版本并覆盖更新。新版本发布后，winget 公共源可能需要等待 Microsoft 审核；可先执行 `winget source update` 刷新本地索引。
 
 Windows 安装器、便携包和 winget manifest 维护说明见 [doc/distribution/windows.zh.md](doc/distribution/windows.zh.md)。
 
 ### Linux
 
-从 [Releases](https://github.com/CyrilPeng/venera-next/releases) 下载对应架构的安装包：
+从 [最新稳定版](https://github.com/CyrilPeng/venera-next/releases/latest) 下载对应架构的安装包：
 
 | 发行版 / 方式 | 安装或运行 |
 |---|---|
@@ -138,19 +140,19 @@ Windows 安装器、便携包和 winget manifest 维护说明见 [doc/distributi
 | Arch Linux（x86_64） | `sudo pacman -U ./venera-next-xxx-x86_64.pkg.tar.zst` |
 | AppImage（x86_64 / ARM64） | `chmod +x VeneraNext-xxx-x86_64.AppImage`，再执行 `./VeneraNext-xxx-x86_64.AppImage`（ARM64 选择 `aarch64` 文件） |
 
-`xxx` 请替换为下载文件中的实际版本号。RPM 和 AppImage 已随 [v1.17.0-rc.1 预发行版](https://github.com/CyrilPeng/Venera-Next/releases/tag/v1.17.0-rc.1) 提供，均支持 x86_64 和 ARM64；可用 `uname -m` 查看机器架构。
+`xxx` 请替换为下载文件中的实际版本号。v1.17.0 稳定版提供 x86_64 和 ARM64 的 RPM 与 AppImage；可用 `uname -m` 查看机器架构。
 
-Linux 安装包基于 Ubuntu 22.04 构建，glibc 基线为 2.35。已发布的 v1.17.0-rc.1 AppImage 仍需系统 GTK 3 和 WebKitGTK 4.1；v1.17.0-rc.2 将这些运行库打入 AppImage，并移除文件名中的 `linux`，仍需兼容的系统 glibc 和显卡驱动。依赖安装、FUSE 问题及发行版兼容范围见 [Linux 安装与分发](doc/distribution/linux.zh.md)。
+Linux 安装包基于 Ubuntu 22.04 构建，glibc 基线为 2.35。当前稳定版 AppImage 已包含 GTK 3 和 WebKitGTK 4.1，无需额外安装 GTK/WebKit；仍需系统提供 glibc 2.35 或更新版本及兼容的 OpenGL/EGL 显卡驱动。依赖安装、FUSE 问题及发行版兼容范围见 [Linux 安装与分发](doc/distribution/linux.zh.md)。
 
 ### macOS
 
-从 Releases 下载 `VeneraNext-xxx.dmg`。
+从 [最新稳定版](https://github.com/CyrilPeng/venera-next/releases/latest) 下载 `VeneraNext-xxx.dmg`。
 
 ---
 
 ## 快速上手
 
-1. 从 [Releases](https://github.com/CyrilPeng/venera-next/releases) 安装适合当前平台的版本。
+1. 从 [最新稳定版](https://github.com/CyrilPeng/venera-next/releases/latest) 安装适合当前平台的版本。
 2. 选择内容来源：设备上的图片、压缩包或图片文档进入“本地 → 导入”；网络阅读先添加兼容扩展；NAS 目录在“设置 → 应用 → WebDAV 漫画库”配置。
 3. 在“设置 → 阅读器”选择阅读模式。长篇连载可用默认瀑布流；传统逐页翻看可用画廊；只想在当前章滚动可用连续模式。
 4. 按设备调整拆分双页、夜间调光或墨水屏刷新。需要时启用设备专属、漫画专属设置。

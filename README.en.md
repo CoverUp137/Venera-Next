@@ -7,7 +7,7 @@
   # VeneraNext
 
   ![Flutter](https://img.shields.io/badge/Flutter-3.41.4-02569B?logo=flutter&logoColor=white&style=flat-square)
-  [![Release](https://img.shields.io/github/v/release/CyrilPeng/venera-next?label=Release&color=10B981&style=flat-square)](https://github.com/CyrilPeng/venera-next/releases)
+  [![Release](https://img.shields.io/github/v/release/CyrilPeng/venera-next?label=Release&color=10B981&style=flat-square)](https://github.com/CyrilPeng/venera-next/releases/latest)
   ![License](https://img.shields.io/badge/License-GPL--3.0-10B981?style=flat-square)
   <br>
   [![Downloads](https://img.shields.io/github/downloads/CyrilPeng/venera-next/total?style=flat-square&color=2ea44f&logo=github)](https://tooomm.github.io/github-release-stats/?user=CyrilPeng&repo=venera-next)
@@ -100,9 +100,11 @@ Venera's JavaScript extensions, local reading, search and categories, favorites,
 
 ## Download and installation
 
+The current stable release is [v1.17.0](https://github.com/CyrilPeng/Venera-Next/releases/tag/v1.17.0). The download links below point to the latest stable release.
+
 ### Android
 
-Download an APK from [GitHub Releases](https://github.com/CyrilPeng/Venera-Next/releases):
+Download an APK from the [latest stable release](https://github.com/CyrilPeng/Venera-Next/releases/latest):
 
 | File | Description | Recommended for |
 |---|---|---|
@@ -114,7 +116,7 @@ When in doubt, use the universal `VeneraNext-xxx-android.apk` package.
 
 ### iOS
 
-Download the IPA from GitHub Releases and sideload it with AltStore.
+Download the IPA from the [latest stable release](https://github.com/CyrilPeng/Venera-Next/releases/latest) and sideload it with AltStore.
 
 ### Windows
 
@@ -125,13 +127,13 @@ winget install --id CyrilPeng.VeneraNext --exact
 winget upgrade --id CyrilPeng.VeneraNext --exact
 ```
 
-You can also download `VeneraNext-xxx-windows-installer.exe` or the portable ZIP from GitHub Releases. Portable builds are not managed by winget and must be updated manually. New winget versions may appear later than GitHub Releases because Microsoft reviews manifest updates; run `winget source update` before checking again.
+You can also download `VeneraNext-xxx-windows-installer.exe` or the portable ZIP from the [latest stable release](https://github.com/CyrilPeng/Venera-Next/releases/latest). Portable builds are not managed by winget and must be updated manually. New winget versions may appear later than GitHub Releases because Microsoft reviews manifest updates; run `winget source update` before checking again.
 
 See [Windows Distribution](doc/distribution/windows.en.md) for installer, portable build, and winget maintenance details.
 
 ### Linux
 
-Download the package matching your distribution and architecture from [Releases](https://github.com/CyrilPeng/venera-next/releases):
+Download the package matching your distribution and architecture from the [latest stable release](https://github.com/CyrilPeng/venera-next/releases/latest):
 
 | Distribution / format | Install or run |
 |---|---|
@@ -140,19 +142,19 @@ Download the package matching your distribution and architecture from [Releases]
 | Arch Linux (x86_64) | `sudo pacman -U ./venera-next-xxx-x86_64.pkg.tar.zst` |
 | AppImage (x86_64 / ARM64) | Run `chmod +x VeneraNext-xxx-x86_64.AppImage`, then `./VeneraNext-xxx-x86_64.AppImage` (use the `aarch64` file on ARM64) |
 
-Replace `xxx` with the actual version in the downloaded filename. RPM and AppImage packages are available in the [v1.17.0-rc.1 prerelease](https://github.com/CyrilPeng/Venera-Next/releases/tag/v1.17.0-rc.1), both for x86_64 and ARM64. Use `uname -m` to check your architecture.
+Replace `xxx` with the actual version in the downloaded filename. The v1.17.0 stable release includes RPM and AppImage packages for both x86_64 and ARM64. Use `uname -m` to check your architecture.
 
-Linux packages are built on Ubuntu 22.04 with a glibc 2.35 baseline. The published v1.17.0-rc.1 AppImage still needs host GTK 3 and WebKitGTK 4.1. v1.17.0-rc.2 bundles these libraries and removes `linux` from the AppImage filename, while retaining host glibc and graphics driver requirements. See [Linux Installation and Distribution](doc/distribution/linux.en.md) for dependencies, FUSE troubleshooting, and distribution compatibility.
+Linux packages are built on Ubuntu 22.04 with a glibc 2.35 baseline. The current stable AppImage includes GTK 3 and WebKitGTK 4.1, so no separate GTK/WebKit installation is needed. It still requires host glibc 2.35 or newer and compatible OpenGL/EGL graphics drivers. See [Linux Installation and Distribution](doc/distribution/linux.en.md) for dependencies, FUSE troubleshooting, and distribution compatibility.
 
 ### macOS
 
-Download `VeneraNext-xxx.dmg` from GitHub Releases.
+Download `VeneraNext-xxx.dmg` from the [latest stable release](https://github.com/CyrilPeng/Venera-Next/releases/latest).
 
 ---
 
 ## Quick start
 
-1. Install the appropriate build from [Releases](https://github.com/CyrilPeng/venera-next/releases).
+1. Install the appropriate build from the [latest stable release](https://github.com/CyrilPeng/venera-next/releases/latest).
 2. Choose a channel: use Local → Import for existing images, archives, or image documents; install a compatible extension for network reading; configure Settings → App → WebDAV Comic Library for a NAS.
 3. Choose a mode in Settings → Reader. Waterfall is the default for long series; Gallery turns pages; Continuous scrolls within the current chapter.
 4. Adjust split spreads, night dimming, or E-Ink refresh for your device. Enable device-specific or per-comic settings when needed.

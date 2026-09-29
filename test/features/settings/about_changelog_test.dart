@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:venera_next/features/settings/settings.dart';
 import 'package:venera_next/foundation/translations.dart';
@@ -52,8 +53,12 @@ void main() {
 
   testWidgets('changelog page renders markdown content', (tester) async {
     await AppTranslation.init();
-
-    await tester.pumpWidget(const MaterialApp(home: ChangelogPage()));
+    // Larger assets are decoded in an isolate, outside the widget test clock.
+    await tester.runAsync(() async {
+      await tester.pumpWidget(const MaterialApp(home: ChangelogPage()));
+      await rootBundle.loadString('CHANGELOG.md');
+      await tester.pump();
+    });
     await tester.pumpAndSettle();
 
     expect(find.text('更新日志'), findsWidgets);
