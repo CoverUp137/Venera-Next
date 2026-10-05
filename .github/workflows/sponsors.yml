@@ -1,9 +1,9 @@
 name: 同步赞助者名单
 
 on:
-  schedule:
+#  schedule:
     # 北京时间每天 00:15，同步延迟不会影响应用核心功能。
-    - cron: "15 16 * * *"
+#    - cron: "15 16 * * *"
   workflow_dispatch:
     inputs:
       dry_run:
