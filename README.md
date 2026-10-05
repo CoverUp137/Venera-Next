@@ -5,8 +5,11 @@
 > 就是读到的章节序号，形如「56话」（分组漫画是「第 2 组 3话」），不用点进详情页就知道读到哪了。
 > 它和「在漫画缩略图上显示历史记录」互不影响：后者保持原样，还是画左上角的页码角标。
 >
-> 对应上游 issue #93。出包：Actions 里的 **Build fork APK**（手动 Run workflow，或 push 到 main 自动跑），
-> 不需要上游那套签名 secret，用的是一次性生成的 keystore。
+> 对应上游 issue #93。
+>
+> 出包：Actions 里的 **Build fork APK** —— push 到 main 自动跑并上传 artifact；想要正式 Release，
+> 就手动 Run workflow 并在 `release_tag` 里填 tag（例如 `v1.17.0-fork.1`），构建完会自动建 tag、
+> 发 Release 并附上 APK。不需要上游那套签名 secret，用的是一次性生成的 keystore。
 
 <div align="center">
   <strong>简体中文</strong> | <a href="README.en.md">English</a>

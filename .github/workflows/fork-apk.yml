@@ -1,9 +1,16 @@
 name: "Build fork APK"
 
 # fork 自用：不需要上游的签名 secret，临时生成一次性 keystore 直接出 APK。
-# 只在 Actions 页面手动 Run workflow，或 main 上改了源码时自动跑。
+#   * push 到 main（改了源码/依赖）：只上传 artifact
+#   * 手动 Run workflow 并填 release_tag：构建完顺手发一个 GitHub Release（tag + APK）
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "要发布的 tag，例如 v1.17.0-fork.1；留空则只上传 artifact"
+        required: false
+        default: ""
+        type: string
   push:
     branches:
       - main
@@ -11,6 +18,7 @@ on:
       - 'lib/**'
       - 'assets/**'
       - 'pubspec.yaml'
+      - 'release.json'
       - '.github/workflows/fork-apk.yml'
 
 concurrency:
@@ -18,7 +26,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -64,9 +72,49 @@ jobs:
           printf 'storePassword=venerafork\nkeyPassword=venerafork\nkeyAlias=venerafork\nstoreFile=../keystore.jks\n' > android/key.properties
       - run: flutter pub get
       - run: flutter build apk --release
-      - uses: actions/upload-artifact@v4
+      - name: 上传 artifact
+        uses: actions/upload-artifact@v4
         with:
           name: venera-next-fork-apk
           path: build/app/outputs/apk/release/*.apk
           if-no-files-found: error
           retention-days: 7
+      - name: 发布 Release
+        if: github.event_name == 'workflow_dispatch' && inputs.release_tag != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.release_tag }}
+        run: |
+          mkdir -p dist
+          apk=$(ls build/app/outputs/apk/release/*.apk | head -n1)
+          cp "$apk" "dist/venera-next-${TAG#v}.apk"
+          ls -lh dist
+          cat > notes.md <<'EOF'
+          ## Venera-Next 个人 fork
+
+          基于上游 [CyrilPeng/Venera-Next](https://github.com/CyrilPeng/Venera-Next) 的 main，只加了一个改动：
+
+          ### 设置 → 发现 →「在漫画缩略图上显示读到多少话」（`showChapterOnTile`，默认关）
+
+          打开后，收藏页、追更页、历史页、探索页等**所有**漫画缩略图的**封面内部下方**会叠一行小字，
+          直接显示读到第几话（例如 `56话`；分组章节显示 `第 2 组 56话`），不用点进详情页就知道读到哪了。
+
+          和相邻的「在漫画缩略图上显示历史记录」（封面左上角的页码角标）互不影响，两个开关各自独立。
+
+          对应上游 issue #93。
+
+          ### 安装说明
+
+          - APK 用 Actions 里一次性生成的 keystore 签名，**不是上游官方签名**，所以无法覆盖安装官方版；
+            从官方版换过来要先卸载（或自行改包名让两者共存）。
+          - 通用 release APK（arm64-v8a / armeabi-v7a / x86_64）。
+          - 源码：https://github.com/CoverUp137/Venera-Next
+          EOF
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/* --clobber
+          else
+            gh release create "$TAG" dist/* \
+              --target "$GITHUB_SHA" \
+              --title "$TAG · 缩略图上显示读到多少话" \
+              --notes-file notes.md
+          fi
