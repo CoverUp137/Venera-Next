@@ -39,12 +39,19 @@ class ComicTileState {
     this.isFavorite = false,
     this.historyPage,
     this.historyMaxPage,
+    this.readChapter,
+    this.readChapterGroup,
     this.hasNewUpdate = false,
   });
 
   final bool isFavorite;
   final int? historyPage;
   final int? historyMaxPage;
+
+  /// 读到的章节序号（1-based；分组漫画里是组内第几话）与所属章节组。
+  /// 只在「在缩略图下显示话数」打开时才有值，画在封面图内部的下方。
+  final int? readChapter;
+  final int? readChapterGroup;
   final bool hasNewUpdate;
 }
 
@@ -276,13 +283,14 @@ class ComicTile extends StatelessWidget {
       null => appdata.settings['comicDisplayMode'],
     };
 
-    Widget child = switch (type) {
-      'detailed' => _buildDetailedMode(context),
-      'gallery' => _buildGalleryMode(context),
-      _ => _buildBriefMode(context),
-    };
-
     final state = _tileState(comic);
+    final chapterText = _readChapterText(state);
+
+    Widget child = switch (type) {
+      'detailed' => _buildDetailedMode(context, chapterText),
+      'gallery' => _buildGalleryMode(context, chapterText),
+      _ => _buildBriefMode(context, chapterText),
+    };
     final isFavorite = state.isFavorite;
     final historyPage = state.historyPage == 0 ? 1 : state.historyPage;
     final hasUpdate = state.hasNewUpdate;
@@ -350,20 +358,60 @@ class ComicTile extends StatelessWidget {
     );
   }
 
-  Widget buildImage(BuildContext context) {
+  Widget buildImage(BuildContext context, String? chapterText) {
     var image = _findImageProvider(comic);
     if (image == null) {
       return const SizedBox();
     }
-    return AnimatedImage(
+    Widget cover = AnimatedImage(
       image: image,
       fit: BoxFit.cover,
       width: double.infinity,
       height: double.infinity,
     );
+    if (chapterText == null) {
+      return cover;
+    }
+    // 话数画在封面图内部的下方（左上角那个历史进度角标仍归
+    // showHistoryStatusOnTile 管，两个开关互不影响）
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final fontSize = constraints.maxWidth < 80
+            ? 8.0
+            : constraints.maxWidth < 150
+            ? 10.0
+            : 11.0;
+        return Stack(
+          children: [
+            cover,
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(3, 1, 3, 2),
+                color: Colors.black.toOpacity(0.55),
+                child: Text(
+                  chapterText,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: fontSize,
+                    fontWeight: FontWeight.w500,
+                    height: 1.2,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
-  Widget _buildDetailedMode(BuildContext context) {
+  Widget _buildDetailedMode(BuildContext context, String? chapterText) {
     return LayoutBuilder(
       builder: (context, constrains) {
         final height = constrains.maxHeight - 16;
@@ -383,7 +431,7 @@ class ComicTile extends StatelessWidget {
             ],
           ),
           clipBehavior: Clip.antiAlias,
-          child: buildImage(context),
+          child: buildImage(context, chapterText),
         );
 
         if (heroID != null) {
@@ -427,7 +475,7 @@ class ComicTile extends StatelessWidget {
     );
   }
 
-  Widget _buildBriefMode(BuildContext context) {
+  Widget _buildBriefMode(BuildContext context, String? chapterText) {
     return LayoutBuilder(
       builder: (context, constraints) {
         Widget image = Container(
@@ -443,7 +491,7 @@ class ComicTile extends StatelessWidget {
             ],
           ),
           clipBehavior: Clip.antiAlias,
-          child: buildImage(context),
+          child: buildImage(context, chapterText),
         );
 
         if (heroID != null) {
@@ -516,10 +564,16 @@ class ComicTile extends StatelessWidget {
                             ),
                           );
                         }
-                        return Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: children,
+                        return Padding(
+                          // 封面底部那行话数占着位置，简介往上让一让
+                          padding: EdgeInsets.only(
+                            bottom: chapterText == null ? 0 : 16,
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: children,
+                          ),
                         );
                       })(),
                     ),
@@ -542,7 +596,7 @@ class ComicTile extends StatelessWidget {
     );
   }
 
-  Widget _buildGalleryMode(BuildContext context) {
+  Widget _buildGalleryMode(BuildContext context, String? chapterText) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final compact = constraints.maxWidth < 88;
@@ -559,7 +613,7 @@ class ComicTile extends StatelessWidget {
             ],
           ),
           clipBehavior: Clip.antiAlias,
-          child: buildImage(context),
+          child: buildImage(context, chapterText),
         );
 
         if (heroID != null) {
@@ -857,6 +911,21 @@ class _ComicDescription extends StatelessWidget {
       ],
     );
   }
+}
+
+/// 封面上那行「读到多少话」：普通章节是「56话」，分组漫画是「第 2 组 3话」。
+/// 没读到（开关关着，或这本没有历史记录）返回 null，什么都不画。
+String? _readChapterText(ComicTileState state) {
+  final chapter = state.readChapter;
+  if (chapter == null || chapter < 1) {
+    return null;
+  }
+  final text = "Ch. @ep".tlParams({"ep": chapter});
+  final group = state.readChapterGroup;
+  if (group == null) {
+    return text;
+  }
+  return "${"Group @group".tlParams({"group": group})} $text";
 }
 
 class _ReadingHistoryPainter extends CustomPainter {

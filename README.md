@@ -1,3 +1,13 @@
+> **这是 CyrilPeng/Venera-Next 的个人 fork。** 基于上游 `main`（1.17.0+229），只多了一个改动：
+>
+> **设置 → 发现 → 「在缩略图下显示话数」**（`showChapterOnTile`，默认关）。
+> 打开后，收藏页、追更页、历史页、探索页等**所有**漫画缩略图会在**封面图内部的下方**画一行小字，
+> 就是读到的章节序号，形如「56话」（分组漫画是「第 2 组 3话」），不用点进详情页就知道读到哪了。
+> 它和「在漫画缩略图上显示历史记录」互不影响：后者保持原样，还是画左上角的页码角标。
+>
+> 对应上游 issue #93。出包：Actions 里的 **Build fork APK**（手动 Run workflow，或 push 到 main 自动跑），
+> 不需要上游那套签名 secret，用的是一次性生成的 keystore。
+
 <div align="center">
   <strong>简体中文</strong> | <a href="README.en.md">English</a>
   <br>

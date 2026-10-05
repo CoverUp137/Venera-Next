@@ -1,0 +1,72 @@
+name: "Build fork APK"
+
+# fork 自用：不需要上游的签名 secret，临时生成一次性 keystore 直接出 APK。
+# 只在 Actions 页面手动 Run workflow，或 main 上改了源码时自动跑。
+on:
+  workflow_dispatch: {}
+  push:
+    branches:
+      - main
+    paths:
+      - 'lib/**'
+      - 'assets/**'
+      - 'pubspec.yaml'
+      - '.github/workflows/fork-apk.yml'
+
+concurrency:
+  group: fork-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: 释放磁盘空间
+        run: rm -rf /opt/hostedtoolcache
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+          flutter-version-file: pubspec.yaml
+          architecture: x64
+          cache: true
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'oracle'
+          java-version: '17'
+      - name: 准备 Rust 工具链
+        run: |
+          python3 .github/scripts/prepare_rust_toolchain.py \
+            --target aarch64-linux-android \
+            --target armv7-linux-androideabi \
+            --target x86_64-linux-android
+      - name: 配置 Gradle 插件仓库
+        run: |
+          mkdir -p ~/.gradle/init.d
+          cat > ~/.gradle/init.d/plugin-repositories.gradle <<'EOF'
+          settingsEvaluated { settings ->
+              settings.pluginManagement.repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+          EOF
+      - name: 生成一次性签名
+        run: |
+          keytool -genkeypair -keystore android/keystore.jks -storetype JKS \
+            -storepass venerafork -keypass venerafork -alias venerafork \
+            -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Venera Next Fork"
+          printf 'storePassword=venerafork\nkeyPassword=venerafork\nkeyAlias=venerafork\nstoreFile=../keystore.jks\n' > android/key.properties
+      - run: flutter pub get
+      - run: flutter build apk --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: venera-next-fork-apk
+          path: build/app/outputs/apk/release/*.apk
+          if-no-files-found: error
+          retention-days: 7

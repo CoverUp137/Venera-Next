@@ -62,6 +62,10 @@ class _ExploreSettingsState extends State<ExploreSettings> {
           settingKey: "showHistoryStatusOnTile",
         ).toSliver(),
         SwitchSetting(
+          title: "Show read chapter on comic tile".tl,
+          settingKey: "showChapterOnTile",
+        ).toSliver(),
+        SwitchSetting(
           title: "Show update status on comic tile".tl,
           settingKey: "showUpdateStatusOnTile",
         ).toSliver(),

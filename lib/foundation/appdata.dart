@@ -350,6 +350,8 @@ class Settings with ChangeNotifier {
     'searchShortcuts': [],
     'showFavoriteStatusOnTile': true,
     'showHistoryStatusOnTile': false,
+    // 在缩略图下方显示读到多少话（左上角的历史角标仍归 showHistoryStatusOnTile 管）
+    'showChapterOnTile': false,
     'showUpdateStatusOnTile': true,
     'blockedWords': [],
     'blockedCommentWords': [],

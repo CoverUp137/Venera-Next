@@ -131,15 +131,22 @@ Future<void> init() async {
 
 ComicTileState _resolveComicTileState(Comic comic) {
   final type = _comicTypeOf(comic);
-  final history = appdata.settings['showHistoryStatusOnTile']
+  // 「在漫画缩略图上显示历史记录」画的是左上角的页进度角标，
+  // 「在缩略图下显示话数」画的是封面里那行读到第几话：两个独立开关，
+  // 任一开着就查一次历史，但各自只取自己那份数据。
+  final showHistoryOnTile = appdata.settings['showHistoryStatusOnTile'] == true;
+  final showChapterOnTile = appdata.settings['showChapterOnTile'] == true;
+  final history = (showHistoryOnTile || showChapterOnTile)
       ? HistoryManager().find(comic.id, type)
       : null;
   return ComicTileState(
     isFavorite:
         appdata.settings['showFavoriteStatusOnTile'] &&
         LocalFavoritesManager().isExist(comic.id, type),
-    historyPage: history?.page,
-    historyMaxPage: history?.maxPage,
+    historyPage: showHistoryOnTile ? history?.page : null,
+    historyMaxPage: showHistoryOnTile ? history?.maxPage : null,
+    readChapter: showChapterOnTile ? history?.ep : null,
+    readChapterGroup: showChapterOnTile ? history?.group : null,
     hasNewUpdate:
         appdata.settings['showUpdateStatusOnTile'] &&
         type != ComicType.local &&
