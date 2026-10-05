@@ -1,8 +1,15 @@
 name: "Build fork APK"
 
 # fork 自用：不需要上游的签名 secret，临时生成一次性 keystore 直接出 APK。
-#   * push 到 main（改了源码/依赖）：只上传 artifact
-#   * 手动 Run workflow 并填 release_tag：构建完顺手发一个 GitHub Release（tag + APK）
+#   * push 到 main（改源码 / 依赖 / 本文件）：只上传 artifact
+#   * 手动 Run workflow 并填 release_tag：构建完顺手发一个 GitHub Release（tag + 全部 APK）
+#
+# android/app/build.gradle 配了 ABI splits（universalApk true），一次构建会出 4 个 APK：
+#   VeneraNext-<版本>-android-armeabi-v7a.apk
+#   VeneraNext-<版本>-android-arm64-v8a.apk
+#   VeneraNext-<版本>-android-x86_64.apk
+#   VeneraNext-<版本>-android.apk            ← 通用包（三个 ABI 都在里面）
+# 四个都会进 artifact；发版时也全部挂到 Release 上（命名与上游一致）。
 on:
   workflow_dispatch:
     inputs:
@@ -72,6 +79,27 @@ jobs:
           printf 'storePassword=venerafork\nkeyPassword=venerafork\nkeyAlias=venerafork\nstoreFile=../keystore.jks\n' > android/key.properties
       - run: flutter pub get
       - run: flutter build apk --release
+      - name: 收集 APK（三个 ABI + 通用，共 4 个）
+        run: |
+          mkdir -p dist
+          shopt -s nullglob
+          version=$(sed -n 's/^version: *\([^+ ]*\).*/\1/p' pubspec.yaml | head -n1)
+          apks=(build/app/outputs/apk/release/*.apk)
+          if (( ${#apks[@]} == 0 )); then
+            echo "没有找到任何 APK"; exit 1
+          fi
+          for apk in "${apks[@]}"; do
+            base=$(basename "$apk")
+            case "$base" in
+              VeneraNext-*) cp "$apk" "dist/$base" ;;
+              *) cp "$apk" "dist/VeneraNext-${version}-android-universal.apk" ;;
+            esac
+          done
+          echo "收集到 ${#apks[@]} 个 APK："
+          ls -lh dist
+          if (( ${#apks[@]} < 4 )); then
+            echo "::warning::只收集到 ${#apks[@]} 个 APK（预期 4 个：三个 ABI + 通用），检查 android/app/build.gradle 的 splits 配置"
+          fi
       - name: 上传 artifact
         uses: actions/upload-artifact@v4
         with:
@@ -85,33 +113,44 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ inputs.release_tag }}
         run: |
-          mkdir -p dist
-          apk=$(ls build/app/outputs/apk/release/*.apk | head -n1)
-          cp "$apk" "dist/venera-next-${TAG#v}.apk"
-          ls -lh dist
           cat > notes.md <<'EOF'
           ## Venera-Next 个人 fork
 
-          基于上游 [CyrilPeng/Venera-Next](https://github.com/CyrilPeng/Venera-Next) 的 main，只加了一个改动：
+          基于上游 [CyrilPeng/Venera-Next](https://github.com/CyrilPeng/Venera-Next) 的 main，只多了一个改动：
 
-          ### 设置 → 发现 →「在漫画缩略图上显示读到多少话」（`showChapterOnTile`，默认关）
+          ### 设置 → 发现 →「在缩略图下显示话数」（`showChapterOnTile`，默认关）
 
-          打开后，收藏页、追更页、历史页、探索页等**所有**漫画缩略图的**封面内部下方**会叠一行小字，
-          直接显示读到第几话（例如 `56话`；分组章节显示 `第 2 组 56话`），不用点进详情页就知道读到哪了。
+          打开后，收藏页、追更页、历史页、探索页等**所有**漫画缩略图会在**封面图内部的下方**叠一行小字，
+          就是读到的章节序号，形如 `56话`（分组漫画是 `第 2 组 3话`），不用点进详情页就知道读到哪了。
 
-          和相邻的「在漫画缩略图上显示历史记录」（封面左上角的页码角标）互不影响，两个开关各自独立。
+          它和「在漫画缩略图上显示历史记录」（封面左上角的页码角标）互不影响，两个开关各自独立。
 
           对应上游 issue #93。
 
-          ### 安装说明
+          ### APK 说明
 
-          - APK 用 Actions 里一次性生成的 keystore 签名，**不是上游官方签名**，所以无法覆盖安装官方版；
-            从官方版换过来要先卸载（或自行改包名让两者共存）。
-          - 通用 release APK（arm64-v8a / armeabi-v7a / x86_64）。
+          一次构建出 4 个包（命名与上游 Release 一致），按手机架构挑一个装：
+
+          | 文件 | 适用 |
+          | --- | --- |
+          | `VeneraNext-<版本>-android-arm64-v8a.apk` | 现在绝大多数手机（推荐） |
+          | `VeneraNext-<版本>-android-armeabi-v7a.apk` | 老 32 位 ARM 设备 |
+          | `VeneraNext-<版本>-android-x86_64.apk` | 模拟器 / x86 平板 |
+          | `VeneraNext-<版本>-android.apk` | 通用包（上面三个架构都含在里面，体积最大） |
+
+          - 这些包用的是 Actions 里一次性生成的 keystore 签名，**不是上游官方签名**，覆盖安装官方版会失败；
+            从官方版换过来要先卸载（或自己改包名让两者共存）。
           - 源码：https://github.com/CoverUp137/Venera-Next
           EOF
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" dist/* --clobber
+            # 旧资产先清掉：早期脚本只传了一个 APK、名字也不一样，留着会误导
+            for name in $(gh release view "$TAG" --json assets --jq '.assets[].name'); do
+              gh release delete-asset "$TAG" "$name" --yes
+            done
+            gh release upload "$TAG" dist/*
+            gh release edit "$TAG" \
+              --title "$TAG · 缩略图上显示读到多少话" \
+              --notes-file notes.md
           else
             gh release create "$TAG" dist/* \
               --target "$GITHUB_SHA" \
