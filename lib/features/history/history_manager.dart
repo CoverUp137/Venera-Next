@@ -520,6 +520,30 @@ class HistoryManager with ChangeNotifier {
     return History.fromRow(res.first);
   }
 
+  /// 老的历史记录里没有章节名（`ep_name` 是后加的列）。拿到章节目录后把名字补上，
+  /// 缩略图那行才能显示成「563话 最终之战」。
+  ///
+  /// 默认只填空值；[overwrite] 为 true 时连旧名字一起刷新（「刷新信息」用）。
+  bool backfillChapterName(
+    History history,
+    ComicChapters? chapters, {
+    bool overwrite = false,
+  }) {
+    if (chapters == null || history.ep < 1) {
+      return false;
+    }
+    final name = chapters.titleOf(history.ep, history.group);
+    if (name == null || name.isEmpty || name == history.epName) {
+      return false;
+    }
+    if (!overwrite && history.epName != null && history.epName!.isNotEmpty) {
+      return false;
+    }
+    history.epName = name;
+    addHistory(history);
+    return true;
+  }
+
   List<History> getAll() {
     var res = _db.select("""
       select * from history
@@ -654,7 +678,9 @@ class HistoryManager with ChangeNotifier {
           'id': history.id,
           'readEpisode': history.readEpisode.toList(),
           'max_page': history.maxPage,
-          'ep_name': history.epName,
+          'ep_name':
+              comicDetails.chapters?.titleOf(history.ep, history.group) ??
+              history.epName,
           'read_duration_ms': history.readDurationMs,
         });
         updatedHistory.group = history.group;

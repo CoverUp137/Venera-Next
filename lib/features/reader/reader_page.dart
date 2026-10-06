@@ -323,6 +323,9 @@ class ReaderState extends State<Reader>
       appdata.settings.getReaderSetting(cid, type.sourceKey, 'readerMode'),
     );
     history = widget.history;
+    // 老的历史记录里没存章节名：进阅读页先补一次，
+    // 免得用户不翻页、缩略图上一直只有话数。
+    HistoryManager().backfillChapterName(history!, widget.chapters);
     _readingSession = ReadingSessionTracker(
       onDuration: (duration) =>
           HistoryManager().addReadDuration(widget.history, duration),
@@ -494,37 +497,6 @@ class ReaderState extends State<Reader>
     }
   }
 
-  /// 当前章节的标题，拿不到就返回 null（缩略图那行只显示话数）。
-  String? _currentChapterName() {
-    final chapters = widget.chapters;
-    if (chapters == null) {
-      return null;
-    }
-    try {
-      if (chapters.isGrouped) {
-        var g = 0;
-        var c = chapter;
-        while (g < chapters.groupCount - 1 &&
-            c > chapters.getGroupByIndex(g).length) {
-          c -= chapters.getGroupByIndex(g).length;
-          g++;
-        }
-        final titles = chapters.getGroupByIndex(g).values.toList();
-        if (c < 1 || c > titles.length) {
-          return null;
-        }
-        return titles[c - 1];
-      }
-      final titles = chapters.titles.toList();
-      if (chapter < 1 || chapter > titles.length) {
-        return null;
-      }
-      return titles[chapter - 1];
-    } catch (_) {
-      return null;
-    }
-  }
-
   void updateHistory() {
     // Initial layout and orientation can update the viewport before images
     // arrive. Keep the saved image index intact until loading/migration ends.
@@ -562,7 +534,9 @@ class ReaderState extends State<Reader>
         history!.ep = chapter;
       }
       // 顺手记下章节名，缩略图那行会显示成「563话 最终之战」
-      history!.epName = _currentChapterName();
+      history!.epName =
+          widget.chapters?.titleOf(history!.ep, history!.group) ??
+          history!.epName;
       history!.time = DateTime.now();
       _updateHistoryTimer?.cancel();
       _updateHistoryTimer = Timer(const Duration(seconds: 1), () {

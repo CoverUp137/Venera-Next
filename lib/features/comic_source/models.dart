@@ -408,6 +408,29 @@ class ComicChapters {
     return _groupedChapters!.values.elementAt(index);
   }
 
+  /// 第 [ep] 话的标题（1-based）。
+  /// 分组漫画要把组号 [group]（1-based）一起传进来，[ep] 是组内第几话。
+  /// 越界或取不到时返回 null。
+  String? titleOf(int ep, [int? group]) {
+    if (ep < 1) {
+      return null;
+    }
+    try {
+      if (isGrouped) {
+        final g = (group ?? 1) - 1;
+        if (g < 0 || g >= _groupedChapters!.length) {
+          return null;
+        }
+        final titles = _groupedChapters!.values.elementAt(g).values.toList();
+        return ep <= titles.length ? titles[ep - 1] : null;
+      }
+      final titles = _chapters!.values.toList();
+      return ep <= titles.length ? titles[ep - 1] : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Get total number of chapters
   int get length {
     return isGrouped
