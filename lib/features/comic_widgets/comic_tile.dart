@@ -997,30 +997,36 @@ class _ChapterLabel extends StatelessWidget {
     return painter.width;
   }
 
+  Widget _staticText(String text) {
+    return Text(
+      text,
+      style: style,
+      textAlign: TextAlign.center,
+      maxLines: 1,
+      softWrap: false,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (name.isEmpty) {
-      return Text(
-        number,
-        style: style,
-        textAlign: TextAlign.center,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      );
+      return _staticText(number);
     }
     return LayoutBuilder(
       builder: (context, constraints) {
         final whole = '$number $name';
-        if (!constraints.maxWidth.isFinite ||
-            _widthOf(whole) <= constraints.maxWidth) {
-          return Text(
-            whole,
-            style: style,
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          );
+        final available = constraints.maxWidth;
+        if (!available.isFinite || _widthOf(whole) <= available) {
+          // 一行放得下：照旧居中显示
+          return _staticText(whole);
         }
+        final numberWidth = _widthOf(number);
+        if (available - numberWidth - _gap < 24) {
+          // 缩略图太窄，话数占完就没地方放名字了：整行一起滚
+          return _ScrollingText(text: whole, style: style);
+        }
+        // 话数固定不动，章节名在剩下的宽度里横向滚动
         return Row(
           children: [
             Text(number, style: style, maxLines: 1, softWrap: false),
@@ -1036,7 +1042,7 @@ class _ChapterLabel extends StatelessWidget {
 }
 
 /// 一行放不下的文字：横向循环滚动（跑马灯）。
-/// 文字比可用宽度窄、或系统开了「减少动态效果」时，直接静态显示。
+/// 只负责「滚动」这一件事；放得下时由 _ChapterLabel 直接静态显示。
 class _ScrollingText extends StatefulWidget {
   const _ScrollingText({required this.text, required this.style});
 
@@ -1053,12 +1059,39 @@ class _ScrollingTextState extends State<_ScrollingText>
   static const double _gap = 36;
 
   /// 每秒滚动多少像素。
-  static const double _speed = 24;
+  static const double _speed = 26;
+
+  /// 量一遍文字的真实宽度（滚多远、滚多久都靠它）。
+  late double _textWidth = _measureText();
 
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: const Duration(seconds: 6),
   );
+
+  double _measureText() {
+    final painter = TextPainter(
+      text: TextSpan(text: widget.text, style: widget.style),
+      maxLines: 1,
+      textDirection: TextDirection.ltr,
+    )..layout();
+    return painter.width;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _restart();
+  }
+
+  @override
+  void didUpdateWidget(covariant _ScrollingText oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.text != widget.text || oldWidget.style != widget.style) {
+      _textWidth = _measureText();
+      _restart();
+    }
+  }
 
   @override
   void dispose() {
@@ -1066,76 +1099,45 @@ class _ScrollingTextState extends State<_ScrollingText>
     super.dispose();
   }
 
-  double _textWidth(BuildContext context) {
-    final painter = TextPainter(
-      text: TextSpan(text: widget.text, style: widget.style),
-      maxLines: 1,
-      textDirection: Directionality.of(context),
-    )..layout();
-    return painter.width;
+  void _restart() {
+    final distance = _textWidth + _gap;
+    final ms = (distance / _speed * 1000).round().clamp(2000, 120000).toInt();
+    _controller.duration = Duration(milliseconds: ms);
+    _controller.value = 0;
+    _controller.repeat();
   }
 
-  void _startScrolling(double distance) {
-    final ms = (distance / _speed * 1000).round().clamp(1000, 120000);
-    _controller.duration = Duration(milliseconds: ms.toInt());
-    if (_controller.isAnimating) {
-      return;
-    }
-    // 在 build 里直接 repeat() 会在同一帧通知监听者，放到下一帧再起
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && !_controller.isAnimating) {
-        _controller.repeat();
-      }
-    });
-  }
-
-  Widget _text({bool softWrap = true, int? maxLines, TextOverflow? overflow}) {
+  Widget _line() {
     return Text(
       widget.text,
       style: widget.style,
-      maxLines: maxLines,
-      softWrap: softWrap,
-      overflow: overflow,
+      maxLines: 1,
+      softWrap: false,
+      overflow: TextOverflow.visible,
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final width = _textWidth(context);
-        final available = constraints.maxWidth;
-        if (!available.isFinite ||
-            width <= available ||
-            MediaQuery.of(context).disableAnimations) {
-          return ClipRect(
-            child: _text(maxLines: 1, overflow: TextOverflow.clip),
-          );
-        }
-        final distance = width + _gap;
-        _startScrolling(distance);
-        return ClipRect(
-          child: OverflowBox(
-            alignment: Alignment.centerLeft,
-            maxWidth: double.infinity,
-            child: AnimatedBuilder(
-              animation: _controller,
-              builder: (context, _) => Transform.translate(
-                offset: Offset(-distance * _controller.value, 0),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _text(softWrap: false),
-                    const SizedBox(width: _gap),
-                    _text(softWrap: false),
-                    const SizedBox(width: _gap),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      },
+    // 高度写死一行：别用会自适应尺寸的组件去量，不定约束下算不出高度会把整行字吃掉
+    final lineHeight = (widget.style.fontSize ?? 12) * 1.3;
+    final distance = _textWidth + _gap;
+    return ClipRect(
+      child: SizedBox(
+        height: lineHeight,
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, _) {
+            final offset = distance * _controller.value;
+            return Stack(
+              children: [
+                Positioned(left: -offset, top: 0, child: _line()),
+                Positioned(left: distance - offset, top: 0, child: _line()),
+              ],
+            );
+          },
+        ),
+      ),
     );
   }
 }
