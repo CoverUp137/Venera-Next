@@ -147,6 +147,7 @@ ComicTileState _resolveComicTileState(Comic comic) {
     historyMaxPage: showHistoryOnTile ? history?.maxPage : null,
     readChapter: showChapterOnTile ? history?.ep : null,
     readChapterGroup: showChapterOnTile ? history?.group : null,
+    readChapterName: showChapterOnTile ? history?.epName : null,
     hasNewUpdate:
         appdata.settings['showUpdateStatusOnTile'] &&
         type != ComicType.local &&

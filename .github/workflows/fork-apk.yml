@@ -4,6 +4,10 @@ name: "Build fork APK"
 #   * push 到 main（改源码 / 依赖 / 本文件）：只上传 artifact
 #   * 手动 Run workflow 并填 release_tag：构建完顺手发一个 GitHub Release（tag + 全部 APK）
 #
+# 发版约定：**每次发版先改版本号，再用新 tag**（pubspec.yaml 的 build 号 +1，release.json 同步），
+# release_tag 例如 v1.17.0-fork.2；tag 已存在时默认直接失败、不会动旧 Release 的资产，
+# 需要原地覆盖时才把 overwrite 勾上。
+#
 # android/app/build.gradle 配了 ABI splits（universalApk true），一次构建会出 4 个 APK：
 #   VeneraNext-<版本>-android-armeabi-v7a.apk
 #   VeneraNext-<版本>-android-arm64-v8a.apk
@@ -14,10 +18,15 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: "要发布的 tag，例如 v1.17.0-fork.1；留空则只上传 artifact"
+        description: "新版本的 tag，例如 v1.17.0-fork.2（留空则只上传 artifact，不发版）"
         required: false
         default: ""
         type: string
+      overwrite:
+        description: "release_tag 已存在时是否覆盖（默认否，直接失败以保住旧 Release）"
+        required: false
+        default: false
+        type: boolean
   push:
     branches:
       - main
@@ -95,6 +104,8 @@ jobs:
               *) cp "$apk" "dist/VeneraNext-${version}-android-universal.apk" ;;
             esac
           done
+          build=$(sed -n 's/^version: *[^+]*+\([0-9]*\).*/\1/p' pubspec.yaml | head -n1)
+          echo "本次构建版本：${version}+${build}（release.json: $(tr -d ' \n' < release.json)）"
           echo "收集到 ${#apks[@]} 个 APK："
           ls -lh dist
           if (( ${#apks[@]} < 4 )); then
@@ -112,6 +123,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ inputs.release_tag }}
+          OVERWRITE: ${{ inputs.overwrite }}
         run: |
           cat > notes.md <<'EOF'
           ## Venera-Next 个人 fork
@@ -121,7 +133,11 @@ jobs:
           ### 设置 → 发现 →「在缩略图下显示话数」（`showChapterOnTile`，默认关）
 
           打开后，收藏页、追更页、历史页、探索页等**所有**漫画缩略图会在**封面图内部的下方**叠一行小字，
-          就是读到的章节序号，形如 `56话`（分组漫画是 `第 2 组 3话`），不用点进详情页就知道读到哪了。
+          显示读到的章节序号**加章节名**，形如 `563话 最终之战`（分组漫画是 `第 2 组 3话 章节名`），
+          不用点进详情页就知道自己读到哪一话了。
+
+          章节名是阅读时顺手记进历史库的（所以老的历史记录没有名字，只显示话数）；
+          一行放不下时话数固定不动、章节名横向滚动。
 
           它和「在漫画缩略图上显示历史记录」（封面左上角的页码角标）互不影响，两个开关各自独立。
 
@@ -143,17 +159,19 @@ jobs:
           - 源码：https://github.com/CoverUp137/Venera-Next
           EOF
           if gh release view "$TAG" >/dev/null 2>&1; then
-            # 旧资产先清掉：早期脚本只传了一个 APK、名字也不一样，留着会误导
-            for name in $(gh release view "$TAG" --json assets --jq '.assets[].name'); do
-              gh release delete-asset "$TAG" "$name" --yes
-            done
-            gh release upload "$TAG" dist/*
+            if [ "$OVERWRITE" != "true" ]; then
+              echo "::error::Release $TAG 已经存在。改了版本号就换一个新 tag（例如把 -fork.N 加一），"
+              echo "::error::确实要原地覆盖旧 Release 的话，重新跑一次并把 overwrite 勾上。"
+              exit 1
+            fi
+            echo "Release $TAG 已存在，overwrite=true：覆盖同名资产并刷新说明"
+            gh release upload "$TAG" dist/* --clobber
             gh release edit "$TAG" \
-              --title "$TAG · 缩略图上显示读到多少话" \
+              --title "$TAG · 缩略图上显示读到哪一话" \
               --notes-file notes.md
           else
             gh release create "$TAG" dist/* \
               --target "$GITHUB_SHA" \
-              --title "$TAG · 缩略图上显示读到多少话" \
+              --title "$TAG · 缩略图上显示读到哪一话" \
               --notes-file notes.md
           fi

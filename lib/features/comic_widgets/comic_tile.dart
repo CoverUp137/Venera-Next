@@ -41,6 +41,7 @@ class ComicTileState {
     this.historyMaxPage,
     this.readChapter,
     this.readChapterGroup,
+    this.readChapterName,
     this.hasNewUpdate = false,
   });
 
@@ -48,10 +49,11 @@ class ComicTileState {
   final int? historyPage;
   final int? historyMaxPage;
 
-  /// 读到的章节序号（1-based；分组漫画里是组内第几话）与所属章节组。
+  /// 读到的章节序号（1-based；分组漫画里是组内第几话）、所属章节组与章节名。
   /// 只在「在缩略图下显示话数」打开时才有值，画在封面图内部的下方。
   final int? readChapter;
   final int? readChapterGroup;
+  final String? readChapterName;
   final bool hasNewUpdate;
 }
 
@@ -284,12 +286,12 @@ class ComicTile extends StatelessWidget {
     };
 
     final state = _tileState(comic);
-    final chapterText = _readChapterText(state);
+    final chapterInfo = _readChapterInfo(state);
 
     Widget child = switch (type) {
-      'detailed' => _buildDetailedMode(context, chapterText),
-      'gallery' => _buildGalleryMode(context, chapterText),
-      _ => _buildBriefMode(context, chapterText),
+      'detailed' => _buildDetailedMode(context, chapterInfo),
+      'gallery' => _buildGalleryMode(context, chapterInfo),
+      _ => _buildBriefMode(context, chapterInfo),
     };
     final isFavorite = state.isFavorite;
     final historyPage = state.historyPage == 0 ? 1 : state.historyPage;
@@ -358,7 +360,7 @@ class ComicTile extends StatelessWidget {
     );
   }
 
-  Widget buildImage(BuildContext context, String? chapterText) {
+  Widget buildImage(BuildContext context, _ReadChapterInfo? chapterInfo) {
     var image = _findImageProvider(comic);
     if (image == null) {
       return const SizedBox();
@@ -369,7 +371,7 @@ class ComicTile extends StatelessWidget {
       width: double.infinity,
       height: double.infinity,
     );
-    if (chapterText == null) {
+    if (chapterInfo == null) {
       return cover;
     }
     // 话数画在封面图内部的下方（左上角那个历史进度角标仍归
@@ -391,11 +393,9 @@ class ComicTile extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.fromLTRB(3, 1, 3, 2),
                 color: Colors.black.toOpacity(0.55),
-                child: Text(
-                  chapterText,
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                child: _ChapterLabel(
+                  number: chapterInfo.number,
+                  name: chapterInfo.name,
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: fontSize,
@@ -411,7 +411,10 @@ class ComicTile extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailedMode(BuildContext context, String? chapterText) {
+  Widget _buildDetailedMode(
+    BuildContext context,
+    _ReadChapterInfo? chapterInfo,
+  ) {
     return LayoutBuilder(
       builder: (context, constrains) {
         final height = constrains.maxHeight - 16;
@@ -431,7 +434,7 @@ class ComicTile extends StatelessWidget {
             ],
           ),
           clipBehavior: Clip.antiAlias,
-          child: buildImage(context, chapterText),
+          child: buildImage(context, chapterInfo),
         );
 
         if (heroID != null) {
@@ -475,7 +478,7 @@ class ComicTile extends StatelessWidget {
     );
   }
 
-  Widget _buildBriefMode(BuildContext context, String? chapterText) {
+  Widget _buildBriefMode(BuildContext context, _ReadChapterInfo? chapterInfo) {
     return LayoutBuilder(
       builder: (context, constraints) {
         Widget image = Container(
@@ -491,7 +494,7 @@ class ComicTile extends StatelessWidget {
             ],
           ),
           clipBehavior: Clip.antiAlias,
-          child: buildImage(context, chapterText),
+          child: buildImage(context, chapterInfo),
         );
 
         if (heroID != null) {
@@ -567,7 +570,7 @@ class ComicTile extends StatelessWidget {
                         return Padding(
                           // 封面底部那行话数占着位置，简介往上让一让
                           padding: EdgeInsets.only(
-                            bottom: chapterText == null ? 0 : 16,
+                            bottom: chapterInfo == null ? 0 : 16,
                           ),
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
@@ -596,7 +599,10 @@ class ComicTile extends StatelessWidget {
     );
   }
 
-  Widget _buildGalleryMode(BuildContext context, String? chapterText) {
+  Widget _buildGalleryMode(
+    BuildContext context,
+    _ReadChapterInfo? chapterInfo,
+  ) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final compact = constraints.maxWidth < 88;
@@ -613,7 +619,7 @@ class ComicTile extends StatelessWidget {
             ],
           ),
           clipBehavior: Clip.antiAlias,
-          child: buildImage(context, chapterText),
+          child: buildImage(context, chapterInfo),
         );
 
         if (heroID != null) {
@@ -913,19 +919,210 @@ class _ComicDescription extends StatelessWidget {
   }
 }
 
-/// 封面上那行「读到多少话」：普通章节是「56话」，分组漫画是「第 2 组 3话」。
+/// 封面上那行「读到哪」：话数（普通章节「56话」，分组漫画「第 2 组 3话」）加章节名。
 /// 没读到（开关关着，或这本没有历史记录）返回 null，什么都不画。
-String? _readChapterText(ComicTileState state) {
+_ReadChapterInfo? _readChapterInfo(ComicTileState state) {
   final chapter = state.readChapter;
   if (chapter == null || chapter < 1) {
     return null;
   }
-  final text = "Ch. @ep".tlParams({"ep": chapter});
+  var number = "Ch. @ep".tlParams({"ep": chapter});
   final group = state.readChapterGroup;
-  if (group == null) {
-    return text;
+  if (group != null) {
+    number = "${"Group @group".tlParams({"group": group})} $number";
   }
-  return "${"Group @group".tlParams({"group": group})} $text";
+  return _ReadChapterInfo(
+    number: number,
+    name: _cleanChapterName(state.readChapterName),
+  );
+}
+
+/// 源给的章节名可能带换行/多余空白，压成一行。
+String _cleanChapterName(String? name) {
+  return name == null ? '' : name.replaceAll(RegExp(r'\s+'), ' ').trim();
+}
+
+/// 封面下方那行阅读进度的内容。
+class _ReadChapterInfo {
+  const _ReadChapterInfo({required this.number, required this.name});
+
+  /// 话数（分组漫画带「第 N 组」前缀）。
+  final String number;
+
+  /// 章节名，拿不到时是空串。
+  final String name;
+}
+
+/// 封面上那行「话数 章节名」：整行放得下就居中显示，
+/// 放不下就让章节名横向滚动（话数固定不动）。
+class _ChapterLabel extends StatelessWidget {
+  const _ChapterLabel({
+    required this.number,
+    required this.name,
+    required this.style,
+  });
+
+  final String number;
+  final String name;
+  final TextStyle style;
+
+  static const double _gap = 6;
+
+  double _widthOf(String text) {
+    final painter = TextPainter(
+      text: TextSpan(text: text, style: style),
+      maxLines: 1,
+      textDirection: TextDirection.ltr,
+    )..layout();
+    return painter.width;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (name.isEmpty) {
+      return Text(
+        number,
+        style: style,
+        textAlign: TextAlign.center,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      );
+    }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final whole = '$number $name';
+        if (!constraints.maxWidth.isFinite ||
+            _widthOf(whole) <= constraints.maxWidth) {
+          return Text(
+            whole,
+            style: style,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          );
+        }
+        return Row(
+          children: [
+            Text(number, style: style, maxLines: 1, softWrap: false),
+            const SizedBox(width: _gap),
+            Expanded(
+              child: _ScrollingText(text: name, style: style),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// 一行放不下的文字：横向循环滚动（跑马灯）。
+/// 文字比可用宽度窄、或系统开了「减少动态效果」时，直接静态显示。
+class _ScrollingText extends StatefulWidget {
+  const _ScrollingText({
+    required this.text,
+    required this.style,
+    this.gap = 36,
+    this.speed = 24,
+  });
+
+  final String text;
+  final TextStyle style;
+
+  /// 两遍文字之间的间隔。
+  final double gap;
+
+  /// 每秒滚动多少像素。
+  final double speed;
+
+  @override
+  State<_ScrollingText> createState() => _ScrollingTextState();
+}
+
+class _ScrollingTextState extends State<_ScrollingText>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 6),
+  );
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  double _textWidth(BuildContext context) {
+    final painter = TextPainter(
+      text: TextSpan(text: widget.text, style: widget.style),
+      maxLines: 1,
+      textDirection: Directionality.of(context),
+    )..layout();
+    return painter.width;
+  }
+
+  void _startScrolling(double distance) {
+    final ms = (distance / widget.speed * 1000).round().clamp(1000, 120000);
+    _controller.duration = Duration(milliseconds: ms.toInt());
+    if (_controller.isAnimating) {
+      return;
+    }
+    // 在 build 里直接 repeat() 会在同一帧通知监听者，放到下一帧再起
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && !_controller.isAnimating) {
+        _controller.repeat();
+      }
+    });
+  }
+
+  Widget _text({bool softWrap = true, int? maxLines, TextOverflow? overflow}) {
+    return Text(
+      widget.text,
+      style: widget.style,
+      maxLines: maxLines,
+      softWrap: softWrap,
+      overflow: overflow,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = _textWidth(context);
+        final available = constraints.maxWidth;
+        if (!available.isFinite ||
+            width <= available ||
+            MediaQuery.of(context).disableAnimations) {
+          return ClipRect(
+            child: _text(maxLines: 1, overflow: TextOverflow.clip),
+          );
+        }
+        final distance = width + widget.gap;
+        _startScrolling(distance);
+        return ClipRect(
+          child: OverflowBox(
+            alignment: Alignment.centerLeft,
+            maxWidth: double.infinity,
+            child: AnimatedBuilder(
+              animation: _controller,
+              builder: (context, _) => Transform.translate(
+                offset: Offset(-distance * _controller.value, 0),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _text(softWrap: false),
+                    SizedBox(width: widget.gap),
+                    _text(softWrap: false),
+                    SizedBox(width: widget.gap),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
 
 class _ReadingHistoryPainter extends CustomPainter {

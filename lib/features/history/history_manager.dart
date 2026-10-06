@@ -39,6 +39,10 @@ class History implements Comic {
   /// If [group] is not null, [ep] is the index of chapter in the group.
   int? group;
 
+  /// Title of the chapter the user read to ([ep]).
+  /// Recorded while reading; shown on the comic tile by "showChapterOnTile".
+  String? epName;
+
   @override
   String id;
 
@@ -59,6 +63,7 @@ class History implements Comic {
     required this.ep,
     required this.page,
     this.group,
+    this.epName,
     Set<String>? readChapters,
     DateTime? time,
     this.readDurationMs = 0,
@@ -83,6 +88,7 @@ class History implements Comic {
         (map["readEpisode"] as List<dynamic>?)?.toSet() ?? const <String>{},
       ),
       maxPage = map["max_page"],
+      epName = map["ep_name"],
       readDurationMs = (map["read_duration_ms"] as num?)?.round() ?? 0;
 
   @override
@@ -106,6 +112,7 @@ class History implements Comic {
       ),
       maxPage = row["max_page"],
       group = row["chapter_group"],
+      epName = row["ep_name"],
       readDurationMs = (row["read_duration_ms"] as num).round();
 
   @override
@@ -201,6 +208,7 @@ class HistoryManager with ChangeNotifier {
           readEpisode text,
           max_page int,
           chapter_group int,
+          ep_name text,
           read_duration_ms integer not null default 0
         );
       """);
@@ -208,6 +216,9 @@ class HistoryManager with ChangeNotifier {
     var columns = _db.select("PRAGMA table_info(history);");
     if (!columns.any((element) => element["name"] == "chapter_group")) {
       _db.execute("alter table history add column chapter_group int;");
+    }
+    if (!columns.any((element) => element["name"] == "ep_name")) {
+      _db.execute("alter table history add column ep_name text;");
     }
     if (!columns.any((element) => element["name"] == "read_duration_ms")) {
       _db.execute(
@@ -224,8 +235,8 @@ class HistoryManager with ChangeNotifier {
   }
 
   static const _insertHistorySql = """
-        insert or replace into history (id, title, subtitle, cover, time, type, ep, page, readEpisode, max_page, chapter_group)
-        values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        insert or replace into history (id, title, subtitle, cover, time, type, ep, page, readEpisode, max_page, chapter_group, ep_name)
+        values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
       """;
 
   static const _updateHistorySql = """
@@ -238,13 +249,14 @@ class HistoryManager with ChangeNotifier {
           page = ?,
           readEpisode = ?,
           max_page = ?,
-          chapter_group = ?
+          chapter_group = ?,
+          ep_name = ?
         where id = ? and type = ?;
       """;
 
   static const _insertReadDurationSql = """
-        insert or replace into history (id, title, subtitle, cover, time, type, ep, page, readEpisode, max_page, chapter_group, read_duration_ms)
-        values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        insert or replace into history (id, title, subtitle, cover, time, type, ep, page, readEpisode, max_page, chapter_group, ep_name, read_duration_ms)
+        values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
       """;
 
   static const _incrementReadDurationSql = """
@@ -266,6 +278,7 @@ class HistoryManager with ChangeNotifier {
       item.readEpisode.join(','),
       item.maxPage,
       item.group,
+      item.epName,
     ];
   }
 
@@ -293,6 +306,7 @@ class HistoryManager with ChangeNotifier {
         item.readEpisode.join(','),
         item.maxPage,
         item.group,
+        item.epName,
         item.id,
         item.type.value,
       ]);
@@ -640,6 +654,7 @@ class HistoryManager with ChangeNotifier {
           'id': history.id,
           'readEpisode': history.readEpisode.toList(),
           'max_page': history.maxPage,
+          'ep_name': history.epName,
           'read_duration_ms': history.readDurationMs,
         });
         updatedHistory.group = history.group;
