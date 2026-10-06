@@ -529,7 +529,8 @@ class HistoryManager with ChangeNotifier {
     ComicChapters? chapters, {
     bool overwrite = false,
   }) {
-    if (chapters == null || history.ep < 1) {
+    // 数据库还没初始化时（widget 测试里没有 history.db）直接跳过
+    if (!isInitialized || chapters == null || history.ep < 1) {
       return false;
     }
     final name = chapters.titleOf(history.ep, history.group);
@@ -540,7 +541,12 @@ class HistoryManager with ChangeNotifier {
       return false;
     }
     history.epName = name;
-    addHistory(history);
+    try {
+      addHistory(history);
+    } catch (e, s) {
+      // 写库失败不影响内存里的名字，本次会话照样能显示
+      Log.error("History", "Failed to save chapter name: $e\n$s");
+    }
     return true;
   }
 

@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:venera_next/features/comic_source/comic_source.dart';
 import 'package:venera_next/features/favorites/favorites.dart';
+import 'package:venera_next/features/history/history.dart';
 import 'package:venera_next/foundation/log.dart';
 import 'package:venera_next/network/request_scope.dart';
 
@@ -32,6 +33,15 @@ Future<ComicUpdateResult> updateComic(
     request.check();
     if (response.error) return ComicUpdateResult(false, response.errorMessage);
     final info = response.data;
+    // 检查更新时已经拿到了章节目录，顺手把历史记录里缺的章节名补上，
+    // 这样收藏 / 追更的缩略图不用一本本点开也能显示「563话 最终之战」。
+    final historyManager = HistoryManager();
+    if (historyManager.isInitialized) {
+      final history = historyManager.find(comic.id, comic.type);
+      if (history != null) {
+        historyManager.backfillChapterName(history, info.chapters);
+      }
+    }
     final tags = <String>[];
     for (final entry in info.tags.entries) {
       if (const [
