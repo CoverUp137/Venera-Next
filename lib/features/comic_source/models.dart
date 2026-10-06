@@ -416,15 +416,20 @@ class ComicChapters {
       return null;
     }
     try {
-      if (isGrouped) {
+      final grouped = _groupedChapters;
+      if (grouped != null) {
         final g = (group ?? 1) - 1;
-        if (g < 0 || g >= _groupedChapters!.length) {
+        if (g < 0 || g >= grouped.length) {
           return null;
         }
-        final titles = _groupedChapters!.values.elementAt(g).values.toList();
+        final titles = grouped.values.elementAt(g).values.toList();
         return ep <= titles.length ? titles[ep - 1] : null;
       }
-      final titles = _chapters!.values.toList();
+      final flat = _chapters;
+      if (flat == null) {
+        return null;
+      }
+      final titles = flat.values.toList();
       return ep <= titles.length ? titles[ep - 1] : null;
     } catch (_) {
       return null;
