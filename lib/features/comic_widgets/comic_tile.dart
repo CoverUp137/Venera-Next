@@ -919,6 +919,17 @@ class _ComicDescription extends StatelessWidget {
   }
 }
 
+/// 源给的章节名常常自带编号（「第90话 误入桃源」「90. 误入桃源」「90話」）。
+/// 这种标题不能再用它在列表里的序号当话数，否则会显示成
+/// 「95话 90话 误入桃源」两套编号打架 —— 直接用标题自己的编号，
+/// 并把编号那截从名字里摘掉。
+final _chapterNumberWithUnit = RegExp(
+  r'^\s*(?:第\s*)?(\d{1,4}(?:[-.]\d{1,3})?)\s*(?:话|話|章|回|集|卷|训|訓|期)\s*[·.、,:：\-—]?\s*',
+);
+final _chapterNumberWithSeparator = RegExp(
+  r'^\s*(?:第\s*)?(\d{1,4}(?:[-.]\d{1,3})?)\s*[.、,:：\-—]\s*',
+);
+
 /// 封面上那行「读到哪」：话数（普通章节「56话」，分组漫画「第 2 组 3话」）加章节名。
 /// 没读到（开关关着，或这本没有历史记录）返回 null，什么都不画。
 _ReadChapterInfo? _readChapterInfo(ComicTileState state) {
@@ -927,14 +938,23 @@ _ReadChapterInfo? _readChapterInfo(ComicTileState state) {
     return null;
   }
   var number = "Ch. @ep".tlParams({"ep": chapter});
+  var name = _cleanChapterName(state.readChapterName);
+
+  final match = name.isEmpty
+      ? null
+      : (_chapterNumberWithUnit.firstMatch(name) ??
+            _chapterNumberWithSeparator.firstMatch(name));
+  if (match != null) {
+    final parsed = match.group(1);
+    number = "Ch. @ep".tlParams({"ep": parsed ?? chapter});
+    name = name.substring(match.end).trim();
+  }
+
   final group = state.readChapterGroup;
   if (group != null) {
     number = "${"Group @group".tlParams({"group": group})} $number";
   }
-  return _ReadChapterInfo(
-    number: number,
-    name: _cleanChapterName(state.readChapterName),
-  );
+  return _ReadChapterInfo(number: number, name: name);
 }
 
 /// 源给的章节名可能带换行/多余空白，压成一行。

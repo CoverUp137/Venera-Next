@@ -231,6 +231,9 @@ class HistoryManager with ChangeNotifier {
     clearExpiredHistory(
       (appdata.settings['historyRetentionDays'] as num?)?.round() ?? 0,
     );
+    // 库文件可能刚被「恢复备份」换过，缓存一律重来
+    _cachedHistoryIds = null;
+    cachedHistories.clear();
     isInitialized = true;
   }
 
@@ -601,6 +604,11 @@ class HistoryManager with ChangeNotifier {
 
   void close() {
     isInitialized = false;
+    // 缓存必须一起清掉：恢复备份是把 history.db 整个文件换掉的，
+    // 留着旧的 id 缓存会让 find() 直接判「没有这条历史」，
+    // 收藏 / 追更的缩略图就什么都不显示了。
+    _cachedHistoryIds = null;
+    cachedHistories.clear();
     _db.dispose();
   }
 
