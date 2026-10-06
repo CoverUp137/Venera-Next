@@ -360,7 +360,7 @@ class ComicTile extends StatelessWidget {
     );
   }
 
-  Widget buildImage(BuildContext context, _ReadChapterInfo? chapterInfo) {
+  Widget _buildImage(BuildContext context, _ReadChapterInfo? chapterInfo) {
     var image = _findImageProvider(comic);
     if (image == null) {
       return const SizedBox();
@@ -434,7 +434,7 @@ class ComicTile extends StatelessWidget {
             ],
           ),
           clipBehavior: Clip.antiAlias,
-          child: buildImage(context, chapterInfo),
+          child: _buildImage(context, chapterInfo),
         );
 
         if (heroID != null) {
@@ -494,7 +494,7 @@ class ComicTile extends StatelessWidget {
             ],
           ),
           clipBehavior: Clip.antiAlias,
-          child: buildImage(context, chapterInfo),
+          child: _buildImage(context, chapterInfo),
         );
 
         if (heroID != null) {
@@ -619,7 +619,7 @@ class ComicTile extends StatelessWidget {
             ],
           ),
           clipBehavior: Clip.antiAlias,
-          child: buildImage(context, chapterInfo),
+          child: _buildImage(context, chapterInfo),
         );
 
         if (heroID != null) {
@@ -1018,21 +1018,10 @@ class _ChapterLabel extends StatelessWidget {
 /// 一行放不下的文字：横向循环滚动（跑马灯）。
 /// 文字比可用宽度窄、或系统开了「减少动态效果」时，直接静态显示。
 class _ScrollingText extends StatefulWidget {
-  const _ScrollingText({
-    required this.text,
-    required this.style,
-    this.gap = 36,
-    this.speed = 24,
-  });
+  const _ScrollingText({required this.text, required this.style});
 
   final String text;
   final TextStyle style;
-
-  /// 两遍文字之间的间隔。
-  final double gap;
-
-  /// 每秒滚动多少像素。
-  final double speed;
 
   @override
   State<_ScrollingText> createState() => _ScrollingTextState();
@@ -1040,6 +1029,12 @@ class _ScrollingText extends StatefulWidget {
 
 class _ScrollingTextState extends State<_ScrollingText>
     with SingleTickerProviderStateMixin {
+  /// 两遍文字之间的间隔。
+  static const double _gap = 36;
+
+  /// 每秒滚动多少像素。
+  static const double _speed = 24;
+
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: const Duration(seconds: 6),
@@ -1061,7 +1056,7 @@ class _ScrollingTextState extends State<_ScrollingText>
   }
 
   void _startScrolling(double distance) {
-    final ms = (distance / widget.speed * 1000).round().clamp(1000, 120000);
+    final ms = (distance / _speed * 1000).round().clamp(1000, 120000);
     _controller.duration = Duration(milliseconds: ms.toInt());
     if (_controller.isAnimating) {
       return;
@@ -1097,7 +1092,7 @@ class _ScrollingTextState extends State<_ScrollingText>
             child: _text(maxLines: 1, overflow: TextOverflow.clip),
           );
         }
-        final distance = width + widget.gap;
+        final distance = width + _gap;
         _startScrolling(distance);
         return ClipRect(
           child: OverflowBox(
@@ -1111,9 +1106,9 @@ class _ScrollingTextState extends State<_ScrollingText>
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     _text(softWrap: false),
-                    SizedBox(width: widget.gap),
+                    const SizedBox(width: _gap),
                     _text(softWrap: false),
-                    SizedBox(width: widget.gap),
+                    const SizedBox(width: _gap),
                   ],
                 ),
               ),
