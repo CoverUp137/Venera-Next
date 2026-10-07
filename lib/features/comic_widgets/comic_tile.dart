@@ -1165,6 +1165,8 @@ class _ScrollingTextState extends State<_ScrollingText>
     _resumeTimer?.cancel();
     if (_isScrolling) {
       _controller.stop();
+      // 列表在滑的时候把名字摆回开头：停在半路上看着像「名字只剩半截」
+      _controller.value = 0;
       return;
     }
     _resumeTimer = Timer(_resumeDelay, () {
@@ -1223,20 +1225,47 @@ class _ScrollingTextState extends State<_ScrollingText>
     final distance = _textWidth + _gap;
     return RepaintBoundary(
       child: ClipRect(
-        child: SizedBox(
-          height: lineHeight,
-          child: AnimatedBuilder(
-            animation: _controller,
-            // 两遍文字只建一次，每帧只挪位置：每帧重建 Text 会让文字每帧重新布局
-            child: Stack(
-              children: [
-                Positioned(left: 0, top: 0, child: _line()),
-                Positioned(left: distance, top: 0, child: _line()),
+        child: ShaderMask(
+          // 两头渐隐：边框上被裁掉的那半个字是淡出的，不会看成「字被切开一半」
+          blendMode: BlendMode.dstIn,
+          shaderCallback: (rect) {
+            final width = rect.width;
+            final fade = math.min(6.0, width * 0.15);
+            if (width <= 0 || fade <= 0.5) {
+              return const LinearGradient(
+                colors: [Colors.white, Colors.white],
+              ).createShader(rect);
+            }
+            return LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: const [
+                Colors.transparent,
+                Colors.white,
+                Colors.white,
+                Colors.transparent,
               ],
-            ),
-            builder: (context, child) => Transform.translate(
-              offset: Offset(-distance * _controller.value, 0),
-              child: child,
+              stops: [0, fade / width, 1 - fade / width, 1],
+            ).createShader(rect);
+          },
+          child: SizedBox(
+            height: lineHeight,
+            child: AnimatedBuilder(
+              animation: _controller,
+              // 两遍文字只建一次，每帧只挪位置：每帧重建 Text 会让文字每帧重新布局
+              child: Stack(
+                // 这层绝对不能裁：裁边会跟着 Transform 一起平移，
+                // 结果标签框右半边整块空掉、边界上的字卡在半截（裁切只留给外层 ClipRect）
+                clipBehavior: Clip.none,
+                children: [
+                  Positioned(left: 0, top: 0, child: _line()),
+                  Positioned(left: distance, top: 0, child: _line()),
+                ],
+              ),
+              builder: (context, child) => Transform.translate(
+                offset: Offset(-distance * _controller.value, 0),
+                child: child,
+              ),
             ),
           ),
         ),
