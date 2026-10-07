@@ -919,15 +919,25 @@ class _ComicDescription extends StatelessWidget {
   }
 }
 
-/// 源给的章节名常常自带编号（「第90话 误入桃源」「90. 误入桃源」「90話」）。
+/// 源给的章节名常常自带编号（「第90话 误入桃源」「90. 误入桃源」「197 惊险」）。
 /// 这种标题不能再用它在列表里的序号当话数，否则会显示成
-/// 「95话 90话 误入桃源」两套编号打架 —— 直接用标题自己的编号，
+/// 「210话 197 惊险」两套编号打架 —— 直接用标题自己的编号，
 /// 并把编号那截从名字里摘掉。
 final _chapterNumberWithUnit = RegExp(
   r'^\s*(?:第\s*)?(\d{1,4}(?:[-.]\d{1,3})?)\s*(?:话|話|章|回|集|卷|训|訓|期)\s*[·.、,:：\-—]?\s*',
 );
+
+/// 分隔符后面不能再跟数字（「197.5 惊险」「12-3 惊险」里那个点是编号的一部分，
+/// 不是编号和章节名之间的分隔符）。
 final _chapterNumberWithSeparator = RegExp(
-  r'^\s*(?:第\s*)?(\d{1,4}(?:[-.]\d{1,3})?)\s*[.、,:：\-—]\s*',
+  r'^\s*(?:第\s*)?(\d{1,4}(?:[-.]\d{1,3})?)\s*[.、,:：\-—](?!\d)\s*',
+);
+
+/// 光秃秃的「编号 + 空格」（「197 惊险」「0197 惊险」）：站点只写编号、后面直接接
+/// 章节名，连「话」字和分隔符都省了。这种只认 1~3 位数字和带前导零的补零编号，
+/// 免得把「2020 年的夏天」这类年份当成话数。
+final _chapterNumberBare = RegExp(
+  r'^\s*(?:第\s*)?((?:\d{1,3}|0\d{1,3})(?:[-.]\d{1,3})?)(?=\s|$)',
 );
 
 /// 封面上那行「读到哪」：话数（普通章节「56话」，分组漫画「第 2 组 3话」）加章节名。
@@ -943,10 +953,13 @@ _ReadChapterInfo? _readChapterInfo(ComicTileState state) {
   final match = name.isEmpty
       ? null
       : (_chapterNumberWithUnit.firstMatch(name) ??
-            _chapterNumberWithSeparator.firstMatch(name));
+            _chapterNumberWithSeparator.firstMatch(name) ??
+            _chapterNumberBare.firstMatch(name));
   if (match != null) {
     final parsed = match.group(1);
-    number = "Ch. @ep".tlParams({"ep": parsed ?? chapter});
+    number = "Ch. @ep".tlParams({
+      "ep": parsed == null ? chapter : _normalizeChapterNumber(parsed),
+    });
     name = name.substring(match.end).trim();
   }
 
@@ -960,6 +973,16 @@ _ReadChapterInfo? _readChapterInfo(ComicTileState state) {
 /// 源给的章节名可能带换行/多余空白，压成一行。
 String _cleanChapterName(String? name) {
   return name == null ? '' : name.replaceAll(RegExp(r'\s+'), ' ').trim();
+}
+
+/// 「0197」→「197」：站点常见的补零编号，显示时去掉前导零；
+/// 「197.5」「197-3」这种带分隔的编号原样留着（只削掉开头的零）。
+String _normalizeChapterNumber(String raw) {
+  final value = int.tryParse(raw);
+  if (value != null) {
+    return "$value";
+  }
+  return raw.replaceFirst(RegExp(r'^0+(?=\d)'), '');
 }
 
 /// 封面下方那行阅读进度的内容。
