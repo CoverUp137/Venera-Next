@@ -146,6 +146,11 @@ class _LocalFavoritesPageState extends State<LocalFavoritesPage> {
   }
 
   List<FavoriteItem> filterComics(List<FavoriteItem> curComics) {
+    // 只有真的按「已读 / 未读」筛时才需要逐本查历史。以前默认的「全部」也跟着
+    // 一本一本查库，收藏几百本时每次重建都要打几百次库，滑起来很卡。
+    if (readFilterSelect != "UnCompleted" && readFilterSelect != "Completed") {
+      return curComics;
+    }
     return curComics.where((comic) {
       var history = HistoryManager().find(
         comic.id,
@@ -153,10 +158,8 @@ class _LocalFavoritesPageState extends State<LocalFavoritesPage> {
       );
       if (readFilterSelect == "UnCompleted") {
         return history == null || history.page != history.maxPage;
-      } else if (readFilterSelect == "Completed") {
-        return history != null && history.page == history.maxPage;
       }
-      return true;
+      return history != null && history.page == history.maxPage;
     }).toList();
   }
 

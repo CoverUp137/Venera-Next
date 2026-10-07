@@ -183,6 +183,10 @@ class HistoryManager with ChangeNotifier {
   /// Cache of history ids. Improve the performance of find operation.
   Map<String, bool>? _cachedHistoryIds;
 
+  /// 缩略图 / 列表滚动时会被反复重建，find() 每次都查一次库（还要 split 一遍
+  /// readEpisode）会明显拖慢滑动：查到就顺手进缓存，容量也放大到一屏放得下的量。
+  static const _historyCacheLimit = 128;
+
   /// Cache records recently modified by the app. Improve the performance of listeners.
   final cachedHistories = <String, History>{};
 
@@ -408,7 +412,7 @@ class HistoryManager with ChangeNotifier {
       _cachedHistoryIds![newItem.id] = true;
     }
     cachedHistories[newItem.id] = newItem;
-    if (cachedHistories.length > 10) {
+    if (cachedHistories.length > _historyCacheLimit) {
       cachedHistories.remove(cachedHistories.keys.first);
     }
   }
@@ -520,7 +524,10 @@ class HistoryManager with ChangeNotifier {
     if (res.isEmpty) {
       return null;
     }
-    return History.fromRow(res.first);
+    final history = History.fromRow(res.first);
+    // 顺手缓存：滚动时同一批缩略图会被反复问，别每次都打库
+    _cacheHistory(history);
+    return history;
   }
 
   /// 老的历史记录里没有章节名（`ep_name` 是后加的列）。拿到章节目录后把名字补上，

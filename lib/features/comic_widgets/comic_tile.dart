@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -940,6 +941,55 @@ final _chapterNumberBare = RegExp(
   r'^\s*(?:第\s*)?((?:\d{1,3}|0\d{1,3})(?:[-.]\d{1,3})?)(?=\s|$)',
 );
 
+/// 缩略图会跟着列表滚动被反复重建。编号解析和文字宽度都是纯计算结果，缓存一份，
+/// 省得每帧跑一遍正则、每帧重新量一次文字（量文字要走一次文字布局，很贵）。
+final _chapterNameParseCache = <String, (String?, String)>{};
+final _textWidthCache = <String, double>{};
+
+/// 量一行文字的真实宽度（带缓存）。
+double _measureTextWidth(String text, TextStyle style) {
+  final key = "${style.fontSize}|${style.fontWeight?.index}|$text";
+  final cached = _textWidthCache[key];
+  if (cached != null) {
+    return cached;
+  }
+  final painter = TextPainter(
+    text: TextSpan(text: text, style: style),
+    maxLines: 1,
+    textDirection: TextDirection.ltr,
+  )..layout();
+  if (_textWidthCache.length > 512) {
+    _textWidthCache.clear();
+  }
+  return _textWidthCache[key] = painter.width;
+}
+
+/// 从章节名里拆出标题自带的编号，返回 (编号, 摘掉编号后的名字)。
+/// 跟语言无关，所以能安全地按原始章节名缓存。
+(String?, String) _parseChapterName(String? rawName) {
+  final key = rawName ?? '';
+  final cached = _chapterNameParseCache[key];
+  if (cached != null) {
+    return cached;
+  }
+  var name = _cleanChapterName(rawName);
+  String? parsed;
+  final match = name.isEmpty
+      ? null
+      : (_chapterNumberWithUnit.firstMatch(name) ??
+            _chapterNumberWithSeparator.firstMatch(name) ??
+            _chapterNumberBare.firstMatch(name));
+  if (match != null) {
+    final raw = match.group(1);
+    parsed = raw == null ? null : _normalizeChapterNumber(raw);
+    name = name.substring(match.end).trim();
+  }
+  if (_chapterNameParseCache.length > 256) {
+    _chapterNameParseCache.clear();
+  }
+  return _chapterNameParseCache[key] = (parsed, name);
+}
+
 /// 封面上那行「读到哪」：话数（普通章节「56话」，分组漫画「第 2 组 3话」）加章节名。
 /// 没读到（开关关着，或这本没有历史记录）返回 null，什么都不画。
 _ReadChapterInfo? _readChapterInfo(ComicTileState state) {
@@ -947,21 +997,8 @@ _ReadChapterInfo? _readChapterInfo(ComicTileState state) {
   if (chapter == null || chapter < 1) {
     return null;
   }
-  var number = "Ch. @ep".tlParams({"ep": chapter});
-  var name = _cleanChapterName(state.readChapterName);
-
-  final match = name.isEmpty
-      ? null
-      : (_chapterNumberWithUnit.firstMatch(name) ??
-            _chapterNumberWithSeparator.firstMatch(name) ??
-            _chapterNumberBare.firstMatch(name));
-  if (match != null) {
-    final parsed = match.group(1);
-    number = "Ch. @ep".tlParams({
-      "ep": parsed == null ? chapter : _normalizeChapterNumber(parsed),
-    });
-    name = name.substring(match.end).trim();
-  }
+  final (parsed, name) = _parseChapterName(state.readChapterName);
+  var number = "Ch. @ep".tlParams({"ep": parsed ?? chapter});
 
   final group = state.readChapterGroup;
   if (group != null) {
@@ -1011,14 +1048,7 @@ class _ChapterLabel extends StatelessWidget {
 
   static const double _gap = 6;
 
-  double _widthOf(String text) {
-    final painter = TextPainter(
-      text: TextSpan(text: text, style: style),
-      maxLines: 1,
-      textDirection: TextDirection.ltr,
-    )..layout();
-    return painter.width;
-  }
+  double _widthOf(String text) => _measureTextWidth(text, style);
 
   Widget _staticText(String text) {
     return Text(
@@ -1084,27 +1114,64 @@ class _ScrollingTextState extends State<_ScrollingText>
   /// 每秒滚动多少像素。
   static const double _speed = 26;
 
+  /// 停手之后多久重新开始滚。
+  static const Duration _resumeDelay = Duration(milliseconds: 240);
+
   /// 量一遍文字的真实宽度（滚多远、滚多久都靠它）。
   late double _textWidth = _measureText();
+
+  /// 外层列表的滚动状态：手指在滑的时候把这个跑马灯停下来。
+  ValueNotifier<bool>? _scrollNotifier;
+  Timer? _resumeTimer;
 
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: const Duration(seconds: 6),
   );
 
-  double _measureText() {
-    final painter = TextPainter(
-      text: TextSpan(text: widget.text, style: widget.style),
-      maxLines: 1,
-      textDirection: TextDirection.ltr,
-    )..layout();
-    return painter.width;
-  }
+  double _measureText() => _measureTextWidth(widget.text, widget.style);
 
   @override
   void initState() {
     super.initState();
     _restart();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 一屏里几十个缩略图同时跑跑马灯会明显拖慢滑动：列表滚动期间先停，
+    // 停手后再接着滚（只影响观感，不影响内容）。
+    final notifier = _scrollStateNotifier();
+    if (!identical(notifier, _scrollNotifier)) {
+      _scrollNotifier?.removeListener(_onScrollingChanged);
+      _scrollNotifier = notifier;
+      _scrollNotifier?.addListener(_onScrollingChanged);
+    }
+  }
+
+  ValueNotifier<bool>? _scrollStateNotifier() {
+    // 拿不到滚动状态（比如不在列表里）就当没在滚，照常滚
+    try {
+      return Scrollable.maybeOf(context)?.position.isScrollingNotifier;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  bool get _isScrolling => _scrollNotifier?.value ?? false;
+
+  void _onScrollingChanged() {
+    _resumeTimer?.cancel();
+    if (_isScrolling) {
+      _controller.stop();
+      return;
+    }
+    _resumeTimer = Timer(_resumeDelay, () {
+      if (mounted && !_isScrolling) {
+        _controller.repeat();
+      }
+    });
   }
 
   @override
@@ -1118,6 +1185,8 @@ class _ScrollingTextState extends State<_ScrollingText>
 
   @override
   void dispose() {
+    _resumeTimer?.cancel();
+    _scrollNotifier?.removeListener(_onScrollingChanged);
     _controller.dispose();
     super.dispose();
   }
@@ -1127,16 +1196,23 @@ class _ScrollingTextState extends State<_ScrollingText>
     final ms = (distance / _speed * 1000).round().clamp(2000, 120000).toInt();
     _controller.duration = Duration(milliseconds: ms);
     _controller.value = 0;
+    if (_isScrolling) {
+      // 正在滑动：先摆好位置，等停手了再开始滚
+      return;
+    }
     _controller.repeat();
   }
 
   Widget _line() {
-    return Text(
-      widget.text,
-      style: widget.style,
-      maxLines: 1,
-      softWrap: false,
-      overflow: TextOverflow.visible,
+    // 自己一层：动画只挪这一块，不用重新栅格化文字
+    return RepaintBoundary(
+      child: Text(
+        widget.text,
+        style: widget.style,
+        maxLines: 1,
+        softWrap: false,
+        overflow: TextOverflow.visible,
+      ),
     );
   }
 
@@ -1145,20 +1221,24 @@ class _ScrollingTextState extends State<_ScrollingText>
     // 高度写死一行：别用会自适应尺寸的组件去量，不定约束下算不出高度会把整行字吃掉
     final lineHeight = (widget.style.fontSize ?? 12) * 1.3;
     final distance = _textWidth + _gap;
-    return ClipRect(
-      child: SizedBox(
-        height: lineHeight,
-        child: AnimatedBuilder(
-          animation: _controller,
-          builder: (context, _) {
-            final offset = distance * _controller.value;
-            return Stack(
+    return RepaintBoundary(
+      child: ClipRect(
+        child: SizedBox(
+          height: lineHeight,
+          child: AnimatedBuilder(
+            animation: _controller,
+            // 两遍文字只建一次，每帧只挪位置：每帧重建 Text 会让文字每帧重新布局
+            child: Stack(
               children: [
-                Positioned(left: -offset, top: 0, child: _line()),
-                Positioned(left: distance - offset, top: 0, child: _line()),
+                Positioned(left: 0, top: 0, child: _line()),
+                Positioned(left: distance, top: 0, child: _line()),
               ],
-            );
-          },
+            ),
+            builder: (context, child) => Transform.translate(
+              offset: Offset(-distance * _controller.value, 0),
+              child: child,
+            ),
+          ),
         ),
       ),
     );
