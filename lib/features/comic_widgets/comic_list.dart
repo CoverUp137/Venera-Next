@@ -234,7 +234,12 @@ class _SliverGridComics extends StatelessWidget {
           margin: const EdgeInsets.all(4),
           child: comic,
         );
-      }, childCount: comics.length),
+      },
+          childCount: comics.length,
+          // 缩略图都是纯展示、没有要保活的状态：关掉 keepAlive，划出屏幕的格子会被销毁，
+          // 里面那些跑马灯/动画控制器也跟着释放；语义索引这里也用不上。
+          addAutomaticKeepAlives: false,
+          addSemanticIndexes: false),
       gridDelegate: SliverGridDelegateWithComics(
         galleryColumns: galleryColumns,
         forceDetailed: favoriteDisplayMode == ComicTileDisplayMode.detailed,

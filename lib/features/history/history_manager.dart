@@ -184,8 +184,9 @@ class HistoryManager with ChangeNotifier {
   Map<String, bool>? _cachedHistoryIds;
 
   /// 缩略图 / 列表滚动时会被反复重建，find() 每次都查一次库（还要 split 一遍
-  /// readEpisode）会明显拖慢滑动：查到就顺手进缓存，容量也放大到一屏放得下的量。
-  static const _historyCacheLimit = 128;
+  /// readEpisode）会明显拖慢滑动：查到就顺手进缓存。容量按「滑几屏也不会被挤掉」来定，
+  /// 一条 History 很小（几百字节），512 条也就百来 KB。
+  static const _historyCacheLimit = 512;
 
   /// Cache records recently modified by the app. Improve the performance of listeners.
   final cachedHistories = <String, History>{};

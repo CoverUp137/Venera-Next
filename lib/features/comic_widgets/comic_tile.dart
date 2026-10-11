@@ -361,16 +361,36 @@ class ComicTile extends StatelessWidget {
     );
   }
 
-  Widget _buildImage(BuildContext context, _ReadChapterInfo? chapterInfo) {
+  Widget _buildImage(
+    BuildContext context,
+    _ReadChapterInfo? chapterInfo, {
+    double? maxWidth,
+    double? maxHeight,
+  }) {
     var image = _findImageProvider(comic);
     if (image == null) {
       return const SizedBox();
     }
+    // 缩略图按「实际显示多大」解码：封面原图动辄 720×1080，一屏几十张按原尺寸解码
+    // 既吃内存、又要在滑动时现解，卡顿基本都出在这一步。这里用布局给的大小乘上
+    // 设备像素比当作解码上限（只缩不放，小图不会被放大）。
+    final dpr = MediaQuery.devicePixelRatioOf(context);
+    final int? cacheWidth = (maxWidth != null && maxWidth.isFinite && maxWidth > 0)
+        ? math.max(1, (maxWidth * dpr).round())
+        : null;
+    final int? cacheHeight =
+        (maxHeight != null && maxHeight.isFinite && maxHeight > 0)
+        ? math.max(1, (maxHeight * dpr).round())
+        : null;
     Widget cover = AnimatedImage(
       image: image,
       fit: BoxFit.cover,
       width: double.infinity,
       height: double.infinity,
+      // 缩到显示尺寸后再放大，bilinear 就够；medium 会走 mipmap，多占显存也更慢
+      filterQuality: FilterQuality.low,
+      cacheWidth: cacheWidth,
+      cacheHeight: cacheHeight,
     );
     if (chapterInfo == null) {
       return cover;
@@ -435,7 +455,12 @@ class ComicTile extends StatelessWidget {
             ],
           ),
           clipBehavior: Clip.antiAlias,
-          child: _buildImage(context, chapterInfo),
+          child: _buildImage(
+            context,
+            chapterInfo,
+            maxWidth: height * 0.68,
+            maxHeight: height,
+          ),
         );
 
         if (heroID != null) {
@@ -495,7 +520,12 @@ class ComicTile extends StatelessWidget {
             ],
           ),
           clipBehavior: Clip.antiAlias,
-          child: _buildImage(context, chapterInfo),
+          child: _buildImage(
+            context,
+            chapterInfo,
+            maxWidth: constraints.maxWidth,
+            maxHeight: constraints.maxHeight,
+          ),
         );
 
         if (heroID != null) {
@@ -620,7 +650,12 @@ class ComicTile extends StatelessWidget {
             ],
           ),
           clipBehavior: Clip.antiAlias,
-          child: _buildImage(context, chapterInfo),
+          child: _buildImage(
+            context,
+            chapterInfo,
+            maxWidth: constraints.maxWidth,
+            maxHeight: constraints.maxHeight,
+          ),
         );
 
         if (heroID != null) {
