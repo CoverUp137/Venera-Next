@@ -128,7 +128,7 @@ jobs:
           cat > notes.md <<'EOF'
           ## Venera-Next 个人 fork
 
-          基于上游 [CyrilPeng/Venera-Next](https://github.com/CyrilPeng/Venera-Next) 的 main，只多了一个改动：
+          基于上游 [CyrilPeng/Venera-Next](https://github.com/CyrilPeng/Venera-Next) 的 main，多两处改动：
 
           ### 设置 → 发现 →「在缩略图下显示话数」（`showChapterOnTile`，默认关）
 
@@ -142,6 +142,13 @@ jobs:
           它和「在漫画缩略图上显示历史记录」（封面左上角的页码角标）互不影响，两个开关各自独立。
 
           对应上游 issue #93。
+
+          ### 缩略图也支持源给的 `modifyImage`
+
+          以前缩略图通道只认 `onResponse`、会忽略 `modifyImage`：有些站的封面和正文一样是「分片加密 + 横向条带倒排」
+          （例如污污漫畫 comicbox.xyz），封面能解密合成、但横条没人倒回去，缩略图会显示成条带倒序的花图。
+          现在缩略图也会执行源里给的 `modifyImage` 脚本，这类站的封面能正常显示；
+          没有提供该字段的源完全不受影响（正文图那条路本来就有这个能力）。
 
           ### APK 说明
 
@@ -167,11 +174,11 @@ jobs:
             echo "Release $TAG 已存在，overwrite=true：覆盖同名资产并刷新说明"
             gh release upload "$TAG" dist/* --clobber
             gh release edit "$TAG" \
-              --title "$TAG · 缩略图上显示读到哪一话" \
+              --title "$TAG · 缩略图：显示读到哪一话 + 支持源给的 modifyImage" \
               --notes-file notes.md
           else
             gh release create "$TAG" dist/* \
               --target "$GITHUB_SHA" \
-              --title "$TAG · 缩略图上显示读到哪一话" \
+              --title "$TAG · 缩略图：显示读到哪一话 + 支持源给的 modifyImage" \
               --notes-file notes.md
           fi
