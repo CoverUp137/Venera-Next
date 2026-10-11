@@ -195,51 +195,53 @@ class _SliverGridComics extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SliverGrid(
-      delegate: SliverChildBuilderDelegate((context, index) {
-        if (index == comics.length - 1) {
-          onLastItemBuild?.call();
-        }
-        var badge = badgeBuilder?.call(comics[index]);
-        var isSelected = selection == null
-            ? false
-            : selection![comics[index]] ?? false;
-        var comic = ComicTile(
-          comic: comics[index],
-          badge: badge,
-          menuOptions: menuBuilder?.call(comics[index]),
-          onTap: onTap != null
-              ? () => onTap!(comics[index], heroIDs[index])
-              : null,
-          onLongPressed: onLongPressed != null
-              ? () => onLongPressed!(comics[index], heroIDs[index])
-              : null,
-          onBlocked: onBlocked,
-          heroID: heroIDs[index],
-          displayMode: favoriteDisplayMode,
-        );
-        if (selection == null) {
-          return comic;
-        }
-        return AnimatedContainer(
-          key: ValueKey(comics[index].id),
-          duration: const Duration(milliseconds: 150),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? Theme.of(
-                    context,
-                  ).colorScheme.secondaryContainer.toOpacity(0.72)
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          if (index == comics.length - 1) {
+            onLastItemBuild?.call();
+          }
+          var badge = badgeBuilder?.call(comics[index]);
+          var isSelected = selection == null
+              ? false
+              : selection![comics[index]] ?? false;
+          var comic = ComicTile(
+            comic: comics[index],
+            badge: badge,
+            menuOptions: menuBuilder?.call(comics[index]),
+            onTap: onTap != null
+                ? () => onTap!(comics[index], heroIDs[index])
                 : null,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          margin: const EdgeInsets.all(4),
-          child: comic,
-        );
-      },
-          childCount: comics.length,
-          // 缩略图都是纯展示、没有要保活的状态：关掉 keepAlive，划出屏幕的格子会被销毁，
-          // 里面那些跑马灯/动画控制器也跟着释放；语义索引这里也用不上。
-          addAutomaticKeepAlives: false,
-          addSemanticIndexes: false),
+            onLongPressed: onLongPressed != null
+                ? () => onLongPressed!(comics[index], heroIDs[index])
+                : null,
+            onBlocked: onBlocked,
+            heroID: heroIDs[index],
+            displayMode: favoriteDisplayMode,
+          );
+          if (selection == null) {
+            return comic;
+          }
+          return AnimatedContainer(
+            key: ValueKey(comics[index].id),
+            duration: const Duration(milliseconds: 150),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? Theme.of(
+                      context,
+                    ).colorScheme.secondaryContainer.toOpacity(0.72)
+                  : null,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(4),
+            child: comic,
+          );
+        },
+        childCount: comics.length,
+        // 缩略图都是纯展示、没有要保活的状态：关掉 keepAlive，划出屏幕的格子会被销毁，
+        // 里面那些跑马灯/动画控制器也跟着释放；语义索引这里也用不上。
+        addAutomaticKeepAlives: false,
+        addSemanticIndexes: false,
+      ),
       gridDelegate: SliverGridDelegateWithComics(
         galleryColumns: galleryColumns,
         forceDetailed: favoriteDisplayMode == ComicTileDisplayMode.detailed,

@@ -375,7 +375,8 @@ class ComicTile extends StatelessWidget {
     // 既吃内存、又要在滑动时现解，卡顿基本都出在这一步。这里用布局给的大小乘上
     // 设备像素比当作解码上限（只缩不放，小图不会被放大）。
     final dpr = MediaQuery.devicePixelRatioOf(context);
-    final int? cacheWidth = (maxWidth != null && maxWidth.isFinite && maxWidth > 0)
+    final int? cacheWidth =
+        (maxWidth != null && maxWidth.isFinite && maxWidth > 0)
         ? math.max(1, (maxWidth * dpr).round())
         : null;
     final int? cacheHeight =
