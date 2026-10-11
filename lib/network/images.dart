@@ -211,6 +211,16 @@ abstract class ImageDownloader {
       );
     }
 
+    // 缩略图也接上 modifyImage：像污污漫畫那种「正文与封面都是分片 + 横向条带倒排」的站点，
+    // 封面同样要靠像素重排才是正的（以前这里只认 onResponse，modifyImage 会被忽略）。
+    if (configs['modifyImage'] is String &&
+        (configs['modifyImage'] as String).isNotEmpty) {
+      buffer = await modifyImageWithScript(
+        buffer is Uint8List ? buffer : Uint8List.fromList(buffer),
+        configs['modifyImage'] as String,
+      );
+    }
+
     await CacheManager().writeCache(cacheKey, buffer);
     yield ImageDownloadProgress(
       currentBytes: buffer.length,
