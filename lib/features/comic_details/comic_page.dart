@@ -277,9 +277,10 @@ class _ComicPageState extends LoadingState<ComicPage, ComicDetails>
   Future<void> onDataLoaded() async {
     isLiked = comic.isLiked ?? false;
     isFavorite = comic.isFavorite ?? false;
-    // 老的历史记录里没存章节名：打开详情页就顺手补上（缩略图那行要用）
+    // 老的历史记录里没存章节名 / 总话数：打开详情页就顺手补上
+    //（缩略图那行和右上角的话数角标都要用）
     if (history != null) {
-      HistoryManager().backfillChapterName(history!, comic.chapters);
+      HistoryManager().backfillChapterInfo(history!, comic.chapters);
     }
     // For sources with multi-folder favorites, prefer querying folders to get accurate favorite status
     // Some sources may not set isFavorite reliably when multi-folder is enabled

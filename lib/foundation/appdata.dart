@@ -352,6 +352,8 @@ class Settings with ChangeNotifier {
     'showHistoryStatusOnTile': false,
     // 在缩略图下方显示读到多少话（左上角的历史角标仍归 showHistoryStatusOnTile 管）
     'showChapterOnTile': false,
+    // 在缩略图内部的右上角显示「读到第几话 / 共多少话」（例如 78/343）
+    'showChapterProgressOnTile': false,
     'showUpdateStatusOnTile': true,
     'blockedWords': [],
     'blockedCommentWords': [],

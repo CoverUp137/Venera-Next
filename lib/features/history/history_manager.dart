@@ -39,6 +39,14 @@ class History implements Comic {
   /// If [group] is not null, [ep] is the index of chapter in the group.
   int? group;
 
+  /// 总话数（章节目录长度）。跟 [maxPage] 一样是「上次打开时源给了多少」，
+  /// 缩略图右上角那枚「78/343」要用；没拿到过目录就没有值。
+  int? maxEp;
+
+  /// 全话序号（1-based，跨组合并后的第几话）。分组漫画里 [ep] 只是组内序号，
+  /// 画角标要用这个；拿不到时就退回 [ep]（普通章节里两者本来就一样）。
+  int? globalEp;
+
   /// Title of the chapter the user read to ([ep]).
   /// Recorded while reading; shown on the comic tile by "showChapterOnTile".
   String? epName;
@@ -67,6 +75,8 @@ class History implements Comic {
     Set<String>? readChapters,
     DateTime? time,
     this.readDurationMs = 0,
+    this.maxEp,
+    this.globalEp,
   }) : type = model.historyType,
        title = model.title,
        subtitle = model.subTitle ?? '',
@@ -89,6 +99,8 @@ class History implements Comic {
       ),
       maxPage = map["max_page"],
       epName = map["ep_name"],
+      maxEp = (map["max_ep"] as num?)?.round(),
+      globalEp = (map["global_ep"] as num?)?.round(),
       readDurationMs = (map["read_duration_ms"] as num?)?.round() ?? 0;
 
   @override
@@ -113,6 +125,8 @@ class History implements Comic {
       maxPage = row["max_page"],
       group = row["chapter_group"],
       epName = row["ep_name"],
+      maxEp = row["max_ep"],
+      globalEp = row["global_ep"],
       readDurationMs = (row["read_duration_ms"] as num).round();
 
   @override
@@ -214,7 +228,9 @@ class HistoryManager with ChangeNotifier {
           max_page int,
           chapter_group int,
           ep_name text,
-          read_duration_ms integer not null default 0
+          read_duration_ms integer not null default 0,
+          max_ep int,
+          global_ep int
         );
       """);
 
@@ -230,6 +246,12 @@ class HistoryManager with ChangeNotifier {
         "alter table history add column read_duration_ms integer not null default 0;",
       );
     }
+    if (!columns.any((element) => element["name"] == "max_ep")) {
+      _db.execute("alter table history add column max_ep int;");
+    }
+    if (!columns.any((element) => element["name"] == "global_ep")) {
+      _db.execute("alter table history add column global_ep int;");
+    }
 
     notifyListeners();
     ImageFavoriteManager().init();
@@ -243,8 +265,8 @@ class HistoryManager with ChangeNotifier {
   }
 
   static const _insertHistorySql = """
-        insert or replace into history (id, title, subtitle, cover, time, type, ep, page, readEpisode, max_page, chapter_group, ep_name)
-        values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        insert or replace into history (id, title, subtitle, cover, time, type, ep, page, readEpisode, max_page, chapter_group, ep_name, max_ep, global_ep)
+        values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
       """;
 
   static const _updateHistorySql = """
@@ -258,13 +280,15 @@ class HistoryManager with ChangeNotifier {
           readEpisode = ?,
           max_page = ?,
           chapter_group = ?,
-          ep_name = ?
+          ep_name = ?,
+          max_ep = ?,
+          global_ep = ?
         where id = ? and type = ?;
       """;
 
   static const _insertReadDurationSql = """
-        insert or replace into history (id, title, subtitle, cover, time, type, ep, page, readEpisode, max_page, chapter_group, ep_name, read_duration_ms)
-        values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        insert or replace into history (id, title, subtitle, cover, time, type, ep, page, readEpisode, max_page, chapter_group, ep_name, max_ep, global_ep, read_duration_ms)
+        values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
       """;
 
   static const _incrementReadDurationSql = """
@@ -287,6 +311,8 @@ class HistoryManager with ChangeNotifier {
       item.maxPage,
       item.group,
       item.epName,
+      item.maxEp,
+      item.globalEp,
     ];
   }
 
@@ -315,6 +341,8 @@ class HistoryManager with ChangeNotifier {
         item.maxPage,
         item.group,
         item.epName,
+        item.maxEp,
+        item.globalEp,
         item.id,
         item.type.value,
       ]);
@@ -531,11 +559,13 @@ class HistoryManager with ChangeNotifier {
     return history;
   }
 
-  /// 老的历史记录里没有章节名（`ep_name` 是后加的列）。拿到章节目录后把名字补上，
-  /// 缩略图那行才能显示成「563话 最终之战」。
+  /// 老的历史记录里没有章节名 / 总话数 / 全话序号（`ep_name`、`max_ep`、
+  /// `global_ep` 都是后加的列）。拿到章节目录后把这些补上：缩略图那行才能显示成
+  /// 「563话 最终之战」、右上角那枚角标才能显示成「78/343」。
   ///
-  /// 默认只填空值；[overwrite] 为 true 时连旧名字一起刷新（「刷新信息」用）。
-  bool backfillChapterName(
+  /// 章节名默认只填空值；[overwrite] 为 true 时连旧名字一起刷新（「刷新信息」用）。
+  /// 总话数与全话序号每次都按当前目录校准。
+  bool backfillChapterInfo(
     History history,
     ComicChapters? chapters, {
     bool overwrite = false,
@@ -544,19 +574,33 @@ class HistoryManager with ChangeNotifier {
     if (!isInitialized || chapters == null || history.ep < 1) {
       return false;
     }
+    var changed = false;
     final name = chapters.titleOf(history.ep, history.group);
-    if (name == null || name.isEmpty || name == history.epName) {
+    if (name != null &&
+        name.isNotEmpty &&
+        name != history.epName &&
+        (overwrite || history.epName == null || history.epName!.isEmpty)) {
+      history.epName = name;
+      changed = true;
+    }
+    final total = chapters.length;
+    if (total > 0 && total != history.maxEp) {
+      history.maxEp = total;
+      changed = true;
+    }
+    final globalEp = chapters.globalEp(history.ep, history.group);
+    if (globalEp != null && globalEp != history.globalEp) {
+      history.globalEp = globalEp;
+      changed = true;
+    }
+    if (!changed) {
       return false;
     }
-    if (!overwrite && history.epName != null && history.epName!.isNotEmpty) {
-      return false;
-    }
-    history.epName = name;
     try {
       addHistory(history);
     } catch (e, s) {
-      // 写库失败不影响内存里的名字，本次会话照样能显示
-      Log.error("History", "Failed to save chapter name: $e\n$s");
+      // 写库失败不影响内存里的数据，本次会话照样能显示
+      Log.error("History", "Failed to save chapter info: $e\n$s");
     }
     return true;
   }
@@ -703,6 +747,10 @@ class HistoryManager with ChangeNotifier {
           'ep_name':
               comicDetails.chapters?.titleOf(history.ep, history.group) ??
               history.epName,
+          'max_ep': comicDetails.chapters?.length ?? history.maxEp,
+          'global_ep':
+              comicDetails.chapters?.globalEp(history.ep, history.group) ??
+              history.globalEp,
           'read_duration_ms': history.readDurationMs,
         });
         updatedHistory.group = history.group;

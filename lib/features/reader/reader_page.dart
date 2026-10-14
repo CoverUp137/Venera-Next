@@ -323,9 +323,9 @@ class ReaderState extends State<Reader>
       appdata.settings.getReaderSetting(cid, type.sourceKey, 'readerMode'),
     );
     history = widget.history;
-    // 老的历史记录里没存章节名：进阅读页先补一次，
-    // 免得用户不翻页、缩略图上一直只有话数。
-    HistoryManager().backfillChapterName(history!, widget.chapters);
+    // 老的历史记录里没存章节名 / 总话数：进阅读页先补一次，
+    // 免得用户不翻页、缩略图上一直只有话数、右上角也一直没有话数进度。
+    HistoryManager().backfillChapterInfo(history!, widget.chapters);
     _readingSession = ReadingSessionTracker(
       onDuration: (duration) =>
           HistoryManager().addReadDuration(widget.history, duration),
@@ -537,6 +537,15 @@ class ReaderState extends State<Reader>
       history!.epName =
           widget.chapters?.titleOf(history!.ep, history!.group) ??
           history!.epName;
+      // 顺手记下「读到第几话 / 共多少话」：这里的 [chapter] 已经是全话序号
+      //（分组漫画在 initState 里就把前面各组的话数加进来了），目录长度就是总话数
+      final chapters = widget.chapters;
+      if (chapters != null) {
+        history!.globalEp = chapter <= chapters.length
+            ? chapter
+            : chapters.length;
+        history!.maxEp = chapters.length;
+      }
       history!.time = DateTime.now();
       _updateHistoryTimer?.cancel();
       _updateHistoryTimer = Timer(const Duration(seconds: 1), () {

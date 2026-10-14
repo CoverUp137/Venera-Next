@@ -132,11 +132,15 @@ Future<void> init() async {
 ComicTileState _resolveComicTileState(Comic comic) {
   final type = _comicTypeOf(comic);
   // 「在漫画缩略图上显示历史记录」画的是左上角的页进度角标，
-  // 「在缩略图下显示话数」画的是封面里那行读到第几话：两个独立开关，
-  // 任一开着就查一次历史，但各自只取自己那份数据。
+  // 「在缩略图下显示话数」画的是封面里那行读到第几话，
+  // 「在缩略图右上角显示话数进度」画的是右上角那枚「78/343」：
+  // 三个独立开关，任一开着就查一次历史，但各自只取自己那份数据。
   final showHistoryOnTile = appdata.settings['showHistoryStatusOnTile'] == true;
   final showChapterOnTile = appdata.settings['showChapterOnTile'] == true;
-  final history = (showHistoryOnTile || showChapterOnTile)
+  final showChapterProgressOnTile =
+      appdata.settings['showChapterProgressOnTile'] == true;
+  final history =
+      (showHistoryOnTile || showChapterOnTile || showChapterProgressOnTile)
       ? HistoryManager().find(comic.id, type)
       : null;
   return ComicTileState(
@@ -148,11 +152,23 @@ ComicTileState _resolveComicTileState(Comic comic) {
     readChapter: showChapterOnTile ? history?.ep : null,
     readChapterGroup: showChapterOnTile ? history?.group : null,
     readChapterName: showChapterOnTile ? history?.epName : null,
+    chapterIndex: showChapterProgressOnTile ? _tileChapterIndex(history) : null,
+    chapterTotal: showChapterProgressOnTile ? history?.maxEp : null,
     hasNewUpdate:
         appdata.settings['showUpdateStatusOnTile'] &&
         type != ComicType.local &&
         LocalFavoritesManager().hasNewUpdate(comic.id, type),
   );
+}
+
+/// 缩略图右上角那枚「78/343」里的 78：优先用全话序号（分组漫画里
+/// [History.ep] 只是组内序号，直接拿来当全话序号会偏小），没有就退回
+/// [History.ep]——普通章节里两者本来就一样，老记录也能显示。
+int? _tileChapterIndex(History? history) {
+  if (history == null) {
+    return null;
+  }
+  return history.globalEp ?? (history.group == null ? history.ep : null);
 }
 
 ComicType _comicTypeOf(Comic comic) {

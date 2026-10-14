@@ -43,6 +43,8 @@ class ComicTileState {
     this.readChapter,
     this.readChapterGroup,
     this.readChapterName,
+    this.chapterIndex,
+    this.chapterTotal,
     this.hasNewUpdate = false,
   });
 
@@ -55,6 +57,12 @@ class ComicTileState {
   final int? readChapter;
   final int? readChapterGroup;
   final String? readChapterName;
+
+  /// 读到第几话 / 共多少话（1-based 的全话序号与总话数）。
+  /// 只在「在缩略图右上角显示话数进度」打开、且历史记录里存过目录长度时才有值，
+  /// 画在封面图内部的右上角。
+  final int? chapterIndex;
+  final int? chapterTotal;
   final bool hasNewUpdate;
 }
 
@@ -297,8 +305,12 @@ class ComicTile extends StatelessWidget {
     final isFavorite = state.isFavorite;
     final historyPage = state.historyPage == 0 ? 1 : state.historyPage;
     final hasUpdate = state.hasNewUpdate;
+    final chapterProgress = _chapterProgress(state);
 
-    if (!isFavorite && historyPage == null && !hasUpdate) {
+    if (!isFavorite &&
+        historyPage == null &&
+        !hasUpdate &&
+        chapterProgress == null) {
       return child;
     }
 
@@ -306,15 +318,26 @@ class ComicTile extends StatelessWidget {
       builder: (context, constraints) {
         final compact = type == 'gallery' && constraints.maxWidth < 88;
         final badgeSize = compact ? 18.0 : 24.0;
+        // 封面在卡片里的左边距与宽度：详细模式的封面只占左边那一块，
+        // 宽度得按高度算（跟 _buildDetailedMode 里的尺寸保持一致），
+        // 右上角那枚话数角标要贴在这块封面的右上角。
+        final coverLeft = type == 'detailed'
+            ? 16.0
+            : compact
+            ? 4.0
+            : 6.0;
+        final coverWidth = type == 'detailed'
+            ? math.max(0.0, constraints.maxHeight - 16) * 0.68
+            : math.max(0.0, constraints.maxWidth - coverLeft * 2);
+        // 详细模式的封面不靠卡片右边（右边是标题那列），角标要贴在封面的右边缘上
+        final coverRight = type == 'detailed'
+            ? math.max(coverLeft, constraints.maxWidth - coverLeft - coverWidth)
+            : coverLeft;
         return Stack(
           children: [
             Positioned.fill(child: child),
             Positioned(
-              left: type == 'detailed'
-                  ? 16
-                  : compact
-                  ? 4
-                  : 6,
+              left: coverLeft,
               top: compact ? 6 : 8,
               child: Container(
                 height: badgeSize,
@@ -355,6 +378,17 @@ class ComicTile extends StatelessWidget {
                 ),
               ),
             ),
+            if (chapterProgress != null)
+              Positioned(
+                right: coverRight,
+                top: compact ? 6 : 8,
+                child: _ChapterProgressBadge(
+                  index: chapterProgress.$1,
+                  total: chapterProgress.$2,
+                  size: badgeSize,
+                  maxWidth: coverWidth * 0.8,
+                ),
+              ),
           ],
         );
       },
@@ -1385,6 +1419,65 @@ class _ReadingHistoryPainter extends CustomPainter {
     return oldDelegate is! _ReadingHistoryPainter ||
         oldDelegate.page != page ||
         oldDelegate.maxPage != maxPage;
+  }
+}
+
+/// 封面右上角那枚「78/343」的内容：读到第几话 / 共多少话。
+/// 总话数是打开详情页 / 阅读 / 检查更新时记在历史里的目录长度，还没记过就返回 null，
+/// 什么都不画（不猜、也不用列表序号凑）。
+(int, int)? _chapterProgress(ComicTileState state) {
+  final total = state.chapterTotal;
+  final index = state.chapterIndex;
+  if (total == null || total < 1 || index == null || index < 1) {
+    return null;
+  }
+  return (index, total);
+}
+
+/// 封面右上角的「读到第几话 / 共多少话」角标（例如「78/343」）。
+/// 用紫色底，跟左上角那枚蓝色的页进度角标、绿色的收藏角标区分开。
+class _ChapterProgressBadge extends StatelessWidget {
+  const _ChapterProgressBadge({
+    required this.index,
+    required this.total,
+    required this.size,
+    required this.maxWidth,
+  });
+
+  final int index;
+
+  final int total;
+
+  final double size;
+
+  /// 最多能占多宽（超了就把字号缩下来，别压在右边那列文字上）。
+  final double maxWidth;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: size,
+      padding: EdgeInsets.symmetric(horizontal: size / 5),
+      alignment: Alignment.center,
+      constraints: BoxConstraints(maxWidth: maxWidth),
+      decoration: BoxDecoration(
+        color: Colors.purple.toOpacity(0.9),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(
+          "$index/$total",
+          maxLines: 1,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: size * 0.52,
+            fontWeight: FontWeight.w600,
+            height: 1.1,
+          ),
+        ),
+      ),
+    );
   }
 }
 

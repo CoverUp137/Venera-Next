@@ -436,6 +436,27 @@ class ComicChapters {
     }
   }
 
+  /// 全话序号（1-based，跨组合并后的第几话）。
+  /// 分组漫画里 [ep] 是组内第几话，得把前面各组的话数加回来；
+  /// 越界或取不到时返回 null。
+  int? globalEp(int ep, [int? group]) {
+    if (ep < 1) {
+      return null;
+    }
+    if (!isGrouped) {
+      return ep <= length ? ep : null;
+    }
+    final g = (group ?? 1) - 1;
+    if (g < 0 || g >= groupCount) {
+      return null;
+    }
+    var res = ep;
+    for (var i = 0; i < g; i++) {
+      res += getGroupByIndex(i).length;
+    }
+    return res <= length ? res : null;
+  }
+
   /// Get total number of chapters
   int get length {
     return isGrouped
