@@ -318,6 +318,7 @@ class ComicTile extends StatelessWidget {
       builder: (context, constraints) {
         final compact = type == 'gallery' && constraints.maxWidth < 88;
         final badgeSize = compact ? 18.0 : 24.0;
+        final top = compact ? 6.0 : 8.0;
         // 封面在卡片里的左边距与宽度：详细模式的封面只占左边那一块，
         // 宽度得按高度算（跟 _buildDetailedMode 里的尺寸保持一致），
         // 右上角那枚话数角标要贴在这块封面的右上角。
@@ -338,7 +339,7 @@ class ComicTile extends StatelessWidget {
             Positioned.fill(child: child),
             Positioned(
               left: coverLeft,
-              top: compact ? 6 : 8,
+              top: top,
               child: Container(
                 height: badgeSize,
                 decoration: BoxDecoration(
@@ -381,12 +382,19 @@ class ComicTile extends StatelessWidget {
             if (chapterProgress != null)
               Positioned(
                 right: coverRight,
-                top: compact ? 6 : 8,
+                top: _chapterProgressTop(
+                  state: state,
+                  progress: chapterProgress,
+                  coverWidth: coverWidth,
+                  badgeSize: badgeSize,
+                  compact: compact,
+                  top: top,
+                ),
                 child: _ChapterProgressBadge(
                   index: chapterProgress.$1,
                   total: chapterProgress.$2,
                   size: badgeSize,
-                  maxWidth: coverWidth * 0.8,
+                  compact: compact,
                 ),
               ),
           ],
@@ -1434,14 +1442,70 @@ class _ReadingHistoryPainter extends CustomPainter {
   return (index, total);
 }
 
-/// 封面右上角的「读到第几话 / 共多少话」角标（例如「78/343」）。
-/// 用紫色底，跟左上角那枚蓝色的页进度角标、绿色的收藏角标区分开。
+/// 封面右上角那枚话数角标的文字样式：比同一行的其它角标矮一点、字小一号，
+/// 整枚是个小长条（「78/343」六个字），不会像块大牌子那样抢戏。
+TextStyle _chapterProgressTextStyle(double size) {
+  return TextStyle(
+    color: Colors.white,
+    fontSize: size * 0.42,
+    fontWeight: FontWeight.w600,
+    height: 1.1,
+  );
+}
+
+/// 角标高度：跟同一行的其它角标差不多，但略矮一点点。
+double _chapterProgressHeight(double size) => size * 0.9;
+
+/// 角标左右内边距。
+double _chapterProgressPadding(bool compact) => compact ? 3 : 4;
+
+/// 右上角那枚话数角标画在第几行。
+///
+/// 封面顶端那条线是跟左上角那排角标（收藏 / 页进度 / 更新）共用的：详细模式的封面
+/// 只有 87px 宽、那排角标就要占 80px，第一行右侧根本放不下。放不下时整枚往下挪
+/// 一个角标的高度（位置仍是封面右边缘），这样两个永远不会叠在一起。
+double _chapterProgressTop({
+  required ComicTileState state,
+  required (int, int) progress,
+  required double coverWidth,
+  required double badgeSize,
+  required bool compact,
+  required double top,
+}) {
+  var used = 0.0;
+  if (state.isFavorite) {
+    used += badgeSize;
+  }
+  if (state.historyPage != null) {
+    // 页进度角标：正方形容器 + 左右内边距，页码/总页数多一位还会更宽，按 1.4 倍估
+    used += badgeSize * (compact ? 1.2 : 1.4);
+  }
+  if (state.hasNewUpdate) {
+    used += badgeSize;
+  }
+  final width = _chapterProgressWidth(
+    "${progress.$1}/${progress.$2}",
+    badgeSize,
+    compact,
+  );
+  if (coverWidth - used >= width + 4) {
+    return top;
+  }
+  return top + badgeSize + 4;
+}
+
+/// 角标（含左右内边距）的实际宽度，用来判断第一行还放不放得下。
+double _chapterProgressWidth(String text, double size, bool compact) {
+  return _measureTextWidth(text, _chapterProgressTextStyle(size)) +
+      _chapterProgressPadding(compact) * 2;
+}
+
 class _ChapterProgressBadge extends StatelessWidget {
   const _ChapterProgressBadge({
     required this.index,
     required this.total,
     required this.size,
-    required this.maxWidth,
+    required this.compact,
   });
 
   final int index;
@@ -1450,32 +1514,25 @@ class _ChapterProgressBadge extends StatelessWidget {
 
   final double size;
 
-  /// 最多能占多宽（超了就把字号缩下来，别压在右边那列文字上）。
-  final double maxWidth;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: size,
-      padding: EdgeInsets.symmetric(horizontal: size / 5),
+      height: _chapterProgressHeight(size),
+      padding: EdgeInsets.symmetric(
+        horizontal: _chapterProgressPadding(compact),
+      ),
       alignment: Alignment.center,
-      constraints: BoxConstraints(maxWidth: maxWidth),
       decoration: BoxDecoration(
         color: Colors.purple.toOpacity(0.9),
         borderRadius: BorderRadius.circular(4),
       ),
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        child: Text(
-          "$index/$total",
-          maxLines: 1,
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: size * 0.52,
-            fontWeight: FontWeight.w600,
-            height: 1.1,
-          ),
-        ),
+      child: Text(
+        "$index/$total",
+        maxLines: 1,
+        softWrap: false,
+        style: _chapterProgressTextStyle(size),
       ),
     );
   }

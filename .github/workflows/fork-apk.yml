@@ -128,7 +128,7 @@ jobs:
           cat > notes.md <<'EOF'
           ## Venera-Next 个人 fork
 
-          基于上游 [CyrilPeng/Venera-Next](https://github.com/CyrilPeng/Venera-Next) 的 main，多两处改动：
+          基于上游 [CyrilPeng/Venera-Next](https://github.com/CyrilPeng/Venera-Next) 的 main，多三处改动：
 
           ### 设置 → 发现 →「在缩略图下显示话数」（`showChapterOnTile`，默认关）
 
@@ -142,6 +142,18 @@ jobs:
           它和「在漫画缩略图上显示历史记录」（封面左上角的页码角标）互不影响，两个开关各自独立。
 
           对应上游 issue #93。
+
+          ### 设置 → 发现 →「在缩略图右上角显示话数进度」（`showChapterProgressOnTile`，默认关）
+
+          打开后，缩略图封面**内部的右上角**会显示一枚小角标，内容是「读到第几话 / 共多少话」，
+          例如 `78/343` —— 就是详情页「上次阅读」里那段进度（全话序号 / 总话数，分组漫画已跨组累加）。
+
+          封面顶端那条线是跟左上角那排角标（收藏 / 页进度 / 更新）共用的：详细模式的封面只有 87px 宽，
+          那排角标就要占 80px —— 所以第一行放不下时，这枚角标会自动落到第二行（位置仍是封面右边缘），
+          不会跟它们叠在一起。
+
+          话数取自打开详情页 / 阅读 / 追更检查 / 历史页「刷新信息」时记下的章节目录长度；
+          没记过的老记录不显示角标（不拿列表序号凑数）。
 
           ### 缩略图也支持源给的 `modifyImage`
 
@@ -174,11 +186,11 @@ jobs:
             echo "Release $TAG 已存在，overwrite=true：覆盖同名资产并刷新说明"
             gh release upload "$TAG" dist/* --clobber
             gh release edit "$TAG" \
-              --title "$TAG · 缩略图：显示读到哪一话 + 支持源给的 modifyImage" \
+              --title "$TAG · 缩略图：显示读到哪一话 + 右上角话数角标 + 支持源给的 modifyImage" \
               --notes-file notes.md
           else
             gh release create "$TAG" dist/* \
               --target "$GITHUB_SHA" \
-              --title "$TAG · 缩略图：显示读到哪一话 + 支持源给的 modifyImage" \
+              --title "$TAG · 缩略图：显示读到哪一话 + 右上角话数角标 + 支持源给的 modifyImage" \
               --notes-file notes.md
           fi
